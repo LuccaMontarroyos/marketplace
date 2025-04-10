@@ -1,0 +1,1 @@
+ALTER TABLE avaliacoes ADD CONSTRAINT check_avaliacao_range CHECK (avaliacao >=0 AND avaliacao <=5);

@@ -1,0 +1,199 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusPedido {
+  PENDENTE
+  ENVIADO
+  ENTREGUE
+}
+
+model Usuario {
+  id                 Int         @id @default(autoincrement())
+  nome               String
+  email              String      @unique
+  senha              String
+  fotoPerfil         String?
+  isAdmin            Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  produtos           Produto[]
+  pedidos            Pedido[]
+  mensagensEnviadas  Mensagem[]  @relation("MensagensEnviadas")
+  mensagensRecebidas Mensagem[]  @relation("MensagensRecebidas")
+  avaliacoes         Avaliacao[]
+  Endereco           Endereco[]
+  Carrinho           Carrinho[]
+  Favorito           Favorito[]
+  updatedAt          DateTime    @updatedAt
+  Pagamento          Pagamento[]
+
+  @@map("usuarios")
+}
+
+enum TipoProduto {
+  ELETRONICOS
+  ROUPA
+  LIVRO
+  MOVEIS
+  AUTOMOVEIS
+  OUTROS
+}
+
+model Produto {
+  id             Int              @id @default(autoincrement())
+  nome           String           @db.VarChar(100)
+  descricao      String
+  preco          Decimal
+  qtdEstoque     Int
+  imagem         String?
+  idVendedor     Int
+  vendedor       Usuario          @relation(fields: [idVendedor], references: [id])
+  tipo           TipoProduto
+  avaliacoes     Avaliacao[]
+  Carrinho       Carrinho[]
+  Favorito       Favorito[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  PedidoProduto  PedidoProduto[]
+  HistoricoPreco HistoricoPreco[]
+
+  @@map("produtos")
+}
+
+model Pedido {
+  id                  Int             @id @default(autoincrement())
+  idComprador         Int
+  comprador           Usuario         @relation(fields: [idComprador], references: [id])
+  status              StatusPedido
+  sessionId           String?
+  dataPedido          DateTime        @default(now())
+  dataEntregaEstimada DateTime
+  idEnderecoEntrega   Int
+  enderecoEntrega     Endereco        @relation(fields: [idEnderecoEntrega], references: [id])
+  Pagamento           Pagamento[]
+  PedidoProduto       PedidoProduto[]
+
+  @@unique([sessionId], map: "unique_sessionId_pedido")
+  @@map("pedidos")
+}
+
+model PedidoProduto {
+  id            Int     @id @default(autoincrement())
+  idPedido      Int
+  pedido        Pedido  @relation(fields: [idPedido], references: [id])
+  idProduto     Int
+  produto       Produto @relation(fields: [idProduto], references: [id])
+  quantidade    Int
+  precoUnitario Decimal
+
+  @@map("pedido_produtos")
+}
+
+model Mensagem {
+  id                Int      @id @default(autoincrement())
+  idUsuarioEmissor  Int
+  usuarioEmissor    Usuario  @relation("MensagensEnviadas", fields: [idUsuarioEmissor], references: [id])
+  idUsuarioReceptor Int
+  usuarioReceptor   Usuario  @relation("MensagensRecebidas", fields: [idUsuarioReceptor], references: [id])
+  mensagem          String
+  dataEnvio         DateTime @default(now())
+
+  @@map("mensagens")
+}
+
+model Avaliacao {
+  id            Int      @id @default(autoincrement())
+  idProduto     Int
+  produto       Produto  @relation(fields: [idProduto], references: [id])
+  idUsuario     Int
+  usuario       Usuario  @relation(fields: [idUsuario], references: [id])
+  avaliacao     Int
+  comentario    String?
+  dataAvaliacao DateTime @default(now())
+
+  @@map("avaliacoes")
+}
+
+model Endereco {
+  id              Int      @id @default(autoincrement())
+  idUsuario       Int
+  usuario         Usuario  @relation(fields: [idUsuario], references: [id])
+  logradouro      String
+  numero          String
+  complemento     String?
+  bairro          String
+  cidade          String
+  estado          String
+  cep             String
+  pontoReferencia String?
+  Pedido          Pedido[]
+  createdAt       DateTime @default(now())
+
+  @@map("enderecos")
+}
+
+model Carrinho {
+  id            Int      @id @default(autoincrement())
+  sessionId     String?
+  idUsuario     Int?
+  usuario       Usuario? @relation(fields: [idUsuario], references: [id])
+  idProduto     Int
+  produto       Produto  @relation(fields: [idProduto], references: [id])
+  quantidade    Int
+  precoAtual    Decimal
+  dataExpiracao DateTime
+
+  @@unique([idUsuario, idProduto])
+  @@unique([sessionId, idProduto])
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+model Pagamento {
+  id              Int             @id @default(autoincrement())
+  idPedido        Int
+  pedido          Pedido          @relation(fields: [idPedido], references: [id])
+  valor           Decimal
+  metodoPagamento String
+  status          StatusPagamento
+  idUsuario       Int?
+  usuario         Usuario?        @relation(fields: [idUsuario], references: [id])
+
+  @@map("pagamentos")
+}
+
+model Favorito {
+  id        Int     @id @default(autoincrement())
+  idUsuario Int
+  usuario   Usuario @relation(fields: [idUsuario], references: [id])
+  idProduto Int
+  produto   Produto @relation(fields: [idProduto], references: [id])
+
+  @@unique([idUsuario, idProduto])
+  @@map("favoritos")
+}
+
+model HistoricoPreco {
+  id        Int      @id @default(autoincrement())
+  idProduto Int
+  produto   Produto  @relation(fields: [idProduto], references: [id])
+  preco     Decimal
+  data      DateTime @default(now())
+
+  @@map("historico_precos")
+}

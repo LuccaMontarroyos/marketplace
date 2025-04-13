@@ -1,0 +1,2044 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Marketplace API",
+        "version": "1.0.0",
+        "description": "Documentação da API do Marketplace"
+    },
+    "paths": {
+        "/usuarios/cadastro": {
+            "post": {
+                "summary": "Cadastrar um usuário",
+                "tags": [
+                    "Usuários"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#components/schemas/UsuarioCadastro"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Irá cadastrar um novo usuário no banco de dados",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "item": {
+                                        "$ref": "#components/schemas/UsuarioSemSenha"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Usuário já cadastrado com esse email"
+                    },
+                    "500": {
+                        "description": "Erro ao cadastrar usuário"
+                    }
+                }
+            }
+        },
+        "/usuarios/login": {
+            "post": {
+                "summary": "Fazer login",
+                "tags": [
+                    "Usuários"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "usuario": {
+                                        "$ref": "#/components/schemas/UsuarioSemSenha"
+                                    },
+                                    "token": {
+                                        "$ref": "#/components/schemas/token"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login será efetuado e o usuário estará autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "item": {
+                                        "$ref": "#components/schemas/UsuarioSemSenha",
+                                        "$ref2": "#components/schemas/token"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Email inválido"
+                    },
+                    "401": {
+                        "description": "Senha incorreta"
+                    },
+                    "500": {
+                        "description": "Erro ao efetuar login"
+                    }
+                }
+            }
+        },
+        "/usuarios/{id}": {
+            "get": {
+                "summary": "Buscar um usuário pelo ID",
+                "tags": [
+                    "Usuários"
+                ],
+                "parameters": {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "description": "ID do próprio usuário que está acessando para ver seus dados",
+                    "schema": {
+                        "type": "integer"
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Retornará os dados do usuário que está acessando a rota",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#components/schemas/Usuario"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Usuário não foi encontrado"
+                    },
+                    "403": {
+                        "description": "Usuário está tentando acessar os dados de outro usuário"
+                    },
+                    "500": {
+                        "description": "Erro ao buscar usuário"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Usuários"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#components/schemas/UsuarioCadastro"
+                            }
+                        }
+                    }
+                },
+                "summary": "Atualizar os dados de um usuário pelo ID",
+                "parameters": {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "description": "ID do próprio usuário que está acessando para atualizar seus dados",
+                    "schema": {
+                        "type": "integer"
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Usuário atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#components/schemas/UsuarioSemSenha"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    },
+                    "403": {
+                        "description": "Usuário está tentando atualizar dados de outro"
+                    },
+                    "500": {
+                        "description": "Erro ao atualizar dados do usuário"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "Deletar um usuário pelo ID",
+                "tags": [
+                    "Produtos"
+                ],
+                "parameters": {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "description": "ID do próprio usuário que está acessando para ver deletar sua conta",
+                    "schema": {
+                        "type": "integer"
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Usuário removido com sucesso"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao excluir usuário"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/usuarios/senha": {
+            "put": {
+                "summary": "Atualizar senha do usuário autenticado",
+                "tags": [
+                    "Usuários"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#components/schemas/trocarSenha"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Nova senha cadastrada com sucesso no banco de dados"
+                    },
+                    "404": {
+                        "description": "Não foi possível encontrar o usuário no banco de dados"
+                    },
+                    "400": {
+                        "description": "Senha atual incorreta"
+                    },
+                    "500": {
+                        "description": "Erro ao trocar senha"
+                    }
+                }
+            }
+        },
+        "/produtos": {
+            "post": {
+                "summary": "Adicionar um produto ao banco de dados",
+                "tags": [
+                    "Produtos"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#components/schemas/ProdutoCadastro"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Produto cadastrado com sucesso!",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "$ref": "#components/schemas/Produto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "get": {
+                "summary": "Buscar todos os produtos no banco de dados",
+                "tags": [
+                    "Produtos"
+                ],
+                "parameters": [
+                    {
+                        "name": "nome",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Filtrar por nome do produto (parcial, case insensitive)"
+                    },
+                    {
+                        "name": "precoMin",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "number"
+                        },
+                        "description": "Preço mínimo"
+                    },
+                    {
+                        "name": "precoMax",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "number"
+                        },
+                        "description": "Preço máximo"
+                    },
+                    {
+                        "name": "tipo",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ELETRONICOS",
+                                "ROUPA",
+                                "LIVRO",
+                                "MOVEIS",
+                                "AUTOMOVEIS",
+                                "OUTROS"
+                            ]
+                        },
+                        "description": "Tipo do produto"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retorna todos os produtos cadastrados do banco de dados (com filtros opcionais)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "produtos": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Produto"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Parâmetros de preço inválidos"
+                    },
+                    "500": {
+                        "description": "Erro ao listar produtos"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/produtos/{id}": {
+            "get": {
+                "summary": "Buscar produto por ID",
+                "tags": [
+                    "Produtos"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "ID do produto a ser buscado"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Produto encontrado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "produto": {
+                                            "$ref": "#/components/schemas/Produto"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao tentar ao buscar produto"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Atualizar produto por ID (somente dono do produto)",
+                "tags": [
+                    "Produtos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "ID do produto a ser atualizado"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "nome": {
+                                        "type": "string"
+                                    },
+                                    "descricao": {
+                                        "type": "string"
+                                    },
+                                    "preco": {
+                                        "type": "number"
+                                    },
+                                    "qtdEstoque": {
+                                        "type": "integer"
+                                    },
+                                    "imagem": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Produto atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "produto": {
+                                            "$ref": "#/components/schemas/Produto"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Você não pode alterar um produto que não é seu"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao atualizar dados do produto"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Excluir produto por ID (somente dono ou admin)",
+                "tags": [
+                    "Produtos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "ID do produto a ser excluído"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Produto excluído com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "produto": {
+                                            "$ref": "#/components/schemas/Produto"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Você não tem permissão para excluir esse produto"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao tentar excluir produto"
+                    }
+                }
+            }
+        },
+        "/pedidos": {
+            "get": {
+                "summary": "Lista pedidos do usuário ou de todos os usuários (admin)",
+                "tags": [
+                    "Pedidos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "idComprador",
+                        "in": "query",
+                        "description": "ID do comprador (usado apenas por administradores)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de pedidos retornada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "pedidos": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Pedido"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro ao buscar pedidos"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Criar um novo pedido a partir do carrinho",
+                "tags": [
+                    "Pedidos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "idEndereco": {
+                                        "type": "integer",
+                                        "example": 3,
+                                        "description": "ID do endereço de entrega"
+                                    },
+                                    "sessionId": {
+                                        "type": "string",
+                                        "example": "sessao-anonima-123",
+                                        "description": "Session ID se o usuário não estiver autenticado"
+                                    },
+                                    "tipoEnvio": {
+                                        "type": "string",
+                                        "enum": [
+                                            "padrão",
+                                            "expresso"
+                                        ],
+                                        "example": "expresso",
+                                        "description": "Tipo de envio (padrão ou expresso)"
+                                    }
+                                },
+                                "required": [
+                                    "idEndereco"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pedido criado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "message": "Pedido realizado com sucesso!",
+                                    "pedido": {
+                                        "id": 123,
+                                        "status": "PENDENTE",
+                                        "dataEntregaEstimada": "2025-04-17T00:00:00Z"
+                                    },
+                                    "prazoDeEntrega": "O prazo de entrega é em 5"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação ou carrinho vazio"
+                    },
+                    "500": {
+                        "description": "Erro ao fazer pedido"
+                    }
+                }
+            }
+        },
+        "/pedidos/refazer": {
+            "post": {
+                "summary": "Refazer um pedido anterior adicionando os mesmos produtos ao carrinho",
+                "tags": [
+                    "Pedidos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "idPedido": {
+                                        "type": "integer",
+                                        "example": 45,
+                                        "description": "ID do pedido que será refeito"
+                                    }
+                                },
+                                "required": [
+                                    "idPedido"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Produtos adicionados ao carrinho com sucesso",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "message": "Pedido adicionado novamente ao carrinho!"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Usuário não tem permissão para refazer esse pedido"
+                    },
+                    "500": {
+                        "description": "Erro refazer pedido"
+                    }
+                }
+            }
+        },
+        "/pedidos/{id}": {
+            "get": {
+                "summary": "Retorna detalhes de um pedido específico",
+                "tags": [
+                    "Pedidos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID do pedido",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pedido encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "pedido": {
+                                            "$ref": "#/components/schemas/Pedido"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Acesso negado ao pedido"
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao buscar o pedido"
+                    }
+                }
+            },
+            "put": {
+                "summary": "Atualiza o status de um pedido (somente admin)",
+                "tags": [
+                    "Pedidos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID do pedido",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "statusPedido"
+                                ],
+                                "properties": {
+                                    "statusPedido": {
+                                        "type": "string",
+                                        "example": "ENVIADO"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pedido atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "pedido": {
+                                            "$ref": "#/components/schemas/Pedido"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido ou status ausente"
+                    },
+                    "403": {
+                        "description": "Sem permissão para atualizar o pedido"
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao atualizar pedido"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Cancela um pedido (se ainda não foi enviado ou entregue)",
+                "tags": [
+                    "Pedidos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID do pedido",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pedido cancelado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "pedido": {
+                                            "$ref": "#/components/schemas/Pedido"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Pedido já foi enviado ou sem permissão"
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao cancelar pedido"
+                    }
+                }
+            }
+        },
+        "/mensagens": {
+            "post": {
+                "tags": [
+                    "Mensagens"
+                ],
+                "summary": "Enviar uma nova mensagem",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "idUsuarioReceptor": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "mensagem": {
+                                        "type": "string",
+                                        "example": "Olá, gostaria de saber mais sobre seu produto!"
+                                    }
+                                },
+                                "required": [
+                                    "idUsuarioReceptor",
+                                    "mensagem"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Mensagem enviada com sucesso!"
+                    },
+                    "404": {
+                        "description": "Usuário receptor não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao enviar mensagem"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "Mensagens"
+                ],
+                "summary": "Listar mensagens do usuário logado",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mensagens encontradas com sucesso"
+                    },
+                    "500": {
+                        "description": "Erro buscar mensagens"
+                    }
+                }
+            }
+        },
+        "/mensagens/{id}": {
+            "get": {
+                "tags": [
+                    "Mensagens"
+                ],
+                "summary": "Buscar uma mensagem pelo ID",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mensagem encontrada"
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Usuário não tem permissão"
+                    },
+                    "500": {
+                        "description": "Erro ao buscar mensagem"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Mensagens"
+                ],
+                "summary": "Excluir uma mensagem pelo ID",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mensagem excluída com sucesso"
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Usuário não tem permissão"
+                    },
+                    "404": {
+                        "description": "Mensagem não encontrada"
+                    },
+                    "500": {
+                        "description": "Erro ao excluir mensagem"
+                    }
+                }
+            }
+        },
+        "/avaliacoes": {
+            "post": {
+                "tags": [
+                    "Avaliações"
+                ],
+                "summary": "Criar uma nova avaliação para um produto",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "idProduto": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "avaliacao": {
+                                        "type": "integer",
+                                        "example": 5,
+                                        "minimum": 0,
+                                        "maximum": 5
+                                    },
+                                    "comentario": {
+                                        "type": "string",
+                                        "example": "Produto excelente, entrega rápida!"
+                                    }
+                                },
+                                "required": [
+                                    "idProduto",
+                                    "avaliacao"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Avaliação feita com sucesso"
+                    },
+                    "400": {
+                        "description": "Avaliação fora do intervalo ou dados inválidos"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao fazer avaliação"
+                    }
+                }
+            }
+        },
+        "/avaliacoes/{idProduto}": {
+            "get": {
+                "tags": [
+                    "Avaliações"
+                ],
+                "summary": "Listar avaliações de um produto",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "idProduto",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 3
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Avaliações encontradas com sucesso"
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "404": {
+                        "description": "Nenhuma avaliação encontrada para o produto"
+                    },
+                    "500": {
+                        "description": "Erro ao buscar avaliações"
+                    }
+                }
+            }
+        },
+        "/avaliacoes/{id}": {
+            "delete": {
+                "tags": [
+                    "Avaliações"
+                ],
+                "summary": "Excluir uma avaliação por ID",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 10
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Avaliação excluída com sucesso"
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Usuário não tem permissão para excluir"
+                    },
+                    "404": {
+                        "description": "Avaliação não encontrada"
+                    },
+                    "500": {
+                        "description": "Erro ao excluir avaliação"
+                    }
+                }
+            }
+        },
+        "/carrinho": {
+            "post": {
+                "tags": [
+                    "Carrinho"
+                ],
+                "summary": "Adicionar produto ao carrinho",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "idProduto": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "quantidade": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "sessionId": {
+                                        "type": "string",
+                                        "example": "sessao-temporaria-abc123"
+                                    }
+                                },
+                                "required": [
+                                    "idProduto",
+                                    "quantidade"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Produto adicionado/atualizado no carrinho"
+                    },
+                    "400": {
+                        "description": "Usuário não autenticado e sem sessionId"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao adicionar ao carrinho"
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Carrinho"
+                ],
+                "summary": "Atualizar a quantidade de um item no carrinho",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "idProduto": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "quantidade": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "sessionId": {
+                                        "type": "string",
+                                        "example": "sessao-temporaria-abc123"
+                                    }
+                                },
+                                "required": [
+                                    "idProduto",
+                                    "quantidade"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Quantidade atualizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Quantidade inválida ou sem sessionId"
+                    },
+                    "404": {
+                        "description": "Item do carrinho não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao atualizar o carrinho"
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "Carrinho"
+                ],
+                "summary": "Listar produtos do carrinho",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "sessionId",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Identificador da sessão para usuários não logados",
+                        "example": "sessao-temporaria-abc123"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Carrinho recuperado com sucesso"
+                    },
+                    "400": {
+                        "description": "Usuário não autenticado e sem sessionId"
+                    },
+                    "500": {
+                        "description": "Erro ao buscar o carrinho"
+                    }
+                }
+            }
+        },
+        "/carrinho/{idProduto}": {
+            "delete": {
+                "tags": [
+                    "Carrinho"
+                ],
+                "summary": "Remover um produto do carrinho",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "idProduto",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 2
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "sessionId": {
+                                        "type": "string",
+                                        "example": "sessao-temporaria-abc123"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Produto removido do carrinho"
+                    },
+                    "400": {
+                        "description": "ID inválido ou falta de autenticação/sessionId"
+                    },
+                    "500": {
+                        "description": "Erro ao remover produto do carrinho"
+                    }
+                }
+            }
+        },
+        "/enderecos": {
+            "post": {
+                "summary": "Cadastra um novo endereço para o usuário autenticado",
+                "tags": [
+                    "Endereços"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "numero",
+                                    "logradouro",
+                                    "cidade",
+                                    "cep",
+                                    "estado",
+                                    "bairro"
+                                ],
+                                "properties": {
+                                    "numero": {
+                                        "type": "string"
+                                    },
+                                    "logradouro": {
+                                        "type": "string",
+                                        "minLength": 3
+                                    },
+                                    "cidade": {
+                                        "type": "string",
+                                        "minLength": 2
+                                    },
+                                    "cep": {
+                                        "type": "string",
+                                        "pattern": "^[0-9]{8}$"
+                                    },
+                                    "estado": {
+                                        "type": "string",
+                                        "enum": [
+                                            "AC",
+                                            "AL",
+                                            "AP",
+                                            "AM",
+                                            "BA",
+                                            "CE",
+                                            "DF",
+                                            "ES",
+                                            "GO",
+                                            "MA",
+                                            "MT",
+                                            "MS",
+                                            "MG",
+                                            "PA",
+                                            "PB",
+                                            "PR",
+                                            "PE",
+                                            "PI",
+                                            "RJ",
+                                            "RN",
+                                            "RS",
+                                            "RO",
+                                            "RR",
+                                            "SC",
+                                            "SP",
+                                            "SE",
+                                            "TO"
+                                        ]
+                                    },
+                                    "bairro": {
+                                        "type": "string",
+                                        "minLength": 3
+                                    },
+                                    "complemento": {
+                                        "type": "string",
+                                        "minLength": 3
+                                    },
+                                    "pontoReferencia": {
+                                        "type": "string"
+                                    }
+                                },
+                                "example": {
+                                    "numero": "123",
+                                    "logradouro": "Rua Exemplo",
+                                    "cidade": "Recife",
+                                    "cep": "50000000",
+                                    "estado": "PE",
+                                    "bairro": "Boa Viagem",
+                                    "complemento": "Apartamento 101",
+                                    "pontoReferencia": "Próximo ao shopping"
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Endereço cadastrado com sucesso"
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou endereço já cadastrado"
+                    },
+                    "500": {
+                        "description": "Erro ao cadastrar endereço"
+                    }
+                }
+            },
+            "get": {
+                "summary": "Lista os endereços do usuário autenticado",
+                "tags": [
+                    "Endereços"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de endereços do usuário"
+                    },
+                    "404": {
+                        "description": "Nenhum endereço encontrado"
+                    },
+                    "500": {
+                        "description": "Erro buscar endereços"
+                    }
+                }
+            }
+        },
+        "/enderecos/{id}": {
+            "put": {
+                "summary": "Atualiza parcialmente um endereço do usuário autenticado",
+                "tags": [
+                    "Endereços"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "numero": {
+                                        "type": "string"
+                                    },
+                                    "logradouro": {
+                                        "type": "string"
+                                    },
+                                    "cidade": {
+                                        "type": "string"
+                                    },
+                                    "cep": {
+                                        "type": "string"
+                                    },
+                                    "estado": {
+                                        "type": "string"
+                                    },
+                                    "bairro": {
+                                        "type": "string"
+                                    },
+                                    "complemento": {
+                                        "type": "string"
+                                    },
+                                    "pontoReferencia": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Endereço atualizado com sucesso"
+                    },
+                    "400": {
+                        "description": "ID inválido ou dados inválidos"
+                    },
+                    "403": {
+                        "description": "Usuário não tem permissão"
+                    },
+                    "404": {
+                        "description": "Endereço não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro atualizar endereço"
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Remove um endereço do usuário autenticado",
+                "tags": [
+                    "Endereços"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Endereço excluído com sucesso"
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "403": {
+                        "description": "Usuário não tem permissão"
+                    },
+                    "404": {
+                        "description": "Endereço não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao excluir endereço"
+                    }
+                }
+            }
+        },
+        "/favoritos": {
+            "post": {
+                "summary": "Adiciona um produto aos favoritos do usuário autenticado",
+                "tags": [
+                    "Favoritos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "idProduto"
+                                ],
+                                "properties": {
+                                    "idProduto": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                },
+                                "example": {
+                                    "idProduto": 1
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Produto adicionado aos favoritos com sucesso"
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou produto já está nos favoritos"
+                    },
+                    "500": {
+                        "description": "Erro ao adicionar um produto como favorito"
+                    }
+                }
+            },
+            "get": {
+                "summary": "Retorna todos os produtos favoritos do usuário autenticado",
+                "tags": [
+                    "Favoritos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de produtos favoritos"
+                    },
+                    "500": {
+                        "description": "Erro ao buscar produtos favoritos"
+                    }
+                }
+            }
+        },
+        "/favoritos/{idProduto}": {
+            "delete": {
+                "summary": "Remove um produto dos favoritos do usuário autenticado",
+                "tags": [
+                    "Favoritos"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "idProduto",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "ID do produto a ser removido dos favoritos"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Produto removido dos favoritos com sucesso"
+                    },
+                    "400": {
+                        "description": "ID de produto inválido"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado nos favoritos"
+                    },
+                    "500": {
+                        "description": "Erro excluir produto como favorito"
+                    }
+                }
+            }
+        },
+        "/admin/usuarios": {
+            "get": {
+                "summary": "Lista todos os usuários com suas avaliações, pedidos e produtos",
+                "tags": [
+                    "Admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Usuários listados com sucesso"
+                    },
+                    "500": {
+                        "description": "Erro ao tentar buscar por usuários"
+                    }
+                }
+            }
+        },
+        "/admin/usuarios/{id}": {
+            "delete": {
+                "summary": "Exclui um usuário específico (somente admin)",
+                "tags": [
+                    "Admin"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "ID do usuário a ser excluído"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Usuário excluído com sucesso"
+                    },
+                    "400": {
+                        "description": "ID inválido"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    },
+                    "500": {
+                        "description": "Erro ao excluir usuário"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "UsuarioCadastro": {
+                "type": "object",
+                "required": [
+                    "nome",
+                    "email",
+                    "senha"
+                ],
+                "properties": {
+                    "nome": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "senha": {
+                        "type": "string",
+                        "description": "Senha criptografa com bcrypt"
+                    },
+                    "fotoPerfil": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                }
+            },
+            "Usuario": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "nome": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "senha": {
+                        "type": "string",
+                        "description": "Senha criptografa com bcrypt"
+                    },
+                    "fotoPerfil": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "isAdmin": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "UsuarioSemSenha": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "nome": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "fotoPerfil": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "isAdmin": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "Produto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "nome": {
+                        "type": "string"
+                    },
+                    "descricao": {
+                        "type": "string"
+                    },
+                    "preco": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "quantidade": {
+                        "type": "integer"
+                    },
+                    "categoria": {
+                        "type": "string"
+                    },
+                    "imagemUrl": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "idVendedor": {
+                        "type": "integer"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ProdutoCadastro": {
+                "type": "object",
+                "properties": {
+                    "nome": {
+                        "type": "string"
+                    },
+                    "descricao": {
+                        "type": "string"
+                    },
+                    "preco": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "quantidade": {
+                        "type": "integer"
+                    },
+                    "categoria": {
+                        "type": "string"
+                    },
+                    "imagemUrl": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "idVendedor": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "PedidoProduto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "idPedido": {
+                        "type": "integer"
+                    },
+                    "idProduto": {
+                        "type": "integer"
+                    },
+                    "quantidade": {
+                        "type": "integer"
+                    },
+                    "produto": {
+                        "$ref": "#/components/schemas/Produto"
+                    }
+                }
+            },
+            "Pedido": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "idComprador": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "PENDENTE",
+                            "ENVIADO",
+                            "ENTREGUE"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "PedidoProduto": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PedidoProduto"
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Usuários",
+            "description": "Gerenciamento de usuários cadastrados no banco de dados"
+        },
+        {
+            "name": "Pedidos",
+            "description": "Operações relacionadas aos pedidos do marketplace"
+        },
+        {
+            "name": "Produtos",
+            "description": "Gerenciamento de produtos cadastrados no banco de dados"
+        },
+        {
+            "name": "Mensagens",
+            "description": "Operações relacionadas ao envio e recebimento de mensagens"
+        },
+        {
+            "name": "Avaliações",
+            "description": "Operações relacionadas às avaliações de produtos"
+        },
+        {
+            "name": "Carrinho",
+            "description": "Gerenciamento de produtos adicionados ao carrinho"
+        },
+        {
+            "name": "Endereços",
+            "description": "Operações relacionadas ao cadastro de endereços do usuário"
+        },
+        {
+            "name": "Favoritos",
+            "description": "Operações relacionadas gerenciamento de produtos escolhidos como favoritos"
+        },
+        {
+            "name": "Admin",
+            "description": "Operações relacionadas ao administrador do Martekplace"
+        }
+    ]
+}

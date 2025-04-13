@@ -5,6 +5,8 @@ import cron from 'node-cron';
 import dotenv from "dotenv";
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocument from "../swagger.json";
 dotenv.config();
 
 const prisma = new PrismaClient();
@@ -13,17 +15,19 @@ const port = 5000;
 
 app.use(express.json());
 
-cron.schedule("0 * * * *", async () => { // Executa a cada hora
+cron.schedule("0 * * * *", async () => {
   console.log("Removendo itens expirados do carrinho...");
   await limparCarrinhosExpirados();
 });
 
 const SECRET_KEY = process.env.JWT || "seu segredo super secreto";
 
-app.get('/', async (req, res) => {
+app.get('/', async (req: Request, res: Response) => {
   const products = await prisma.produto.findMany();
   res.status(200).json({ products });
 });
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 const usuarioAutenticado = (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(" ")[1];
@@ -78,7 +82,7 @@ app.post('/usuarios/cadastro', async (req: Request, res: Response) => {
     });
 
     if (usuarioExistente) {
-      return res.status(400).json({ message: 'Email do usuário já cadastrado' });
+      return res.status(409).json({ message: 'Email do usuário já cadastrado' });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -97,11 +101,7 @@ app.post('/usuarios/cadastro', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro interno do servidor: ${error}` });
-    }
+    return res.status(500).json({ message: `Erro ao cadastrar usuário: ${error instanceof Error ? error.message : error}` })
   }
 });
 
@@ -117,13 +117,13 @@ app.post('/usuarios/login', async (req: Request, res: Response) => {
     });
 
     if (!usuario) {
-      return res.status(400).json({ message: 'Email ou senha inválidos!' });
+      return res.status(400).json({ message: 'Email inválido!' });
     }
 
     const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
 
     if (!senhaCorreta) {
-      return res.status(401).json({ message: 'Email ou senha inválidos!' });
+      return res.status(401).json({ message: 'Senha incorreta!' });
     }
 
     const EXPIRES_IN = process.env.JWT_EXPIRES_IN as string || '1h';
@@ -140,12 +140,7 @@ app.post('/usuarios/login', async (req: Request, res: Response) => {
 
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao fazer login: ${error}` });
-    }
-
+    return res.status(500).json({ message: `Erro ao fazer login: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -176,12 +171,7 @@ app.get('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Response)
     return res.status(200).json({ usuario })
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao tentar encontrar usuário: ${error}` });
-    }
-
+    return res.status(500).json({ message: `Erro ao buscar usuário: ${error instanceof Error ? error.message : error}` });
   }
 
 })
@@ -219,7 +209,7 @@ app.put('/usuarios/senha', usuarioAutenticado, async (req: Request, res: Respons
 
     return res.status(200).json({ message: 'Nova senha cadastrada com sucesso!' })
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : `Erro ao tentar mudar de senha: ${error}` });
+    return res.status(500).json({ message: `Erro ao trocar senha: ${error instanceof Error ? error.message : error}` });
 
   }
 })
@@ -267,8 +257,7 @@ app.put('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Response)
     return res.status(200).json({ message: "Usuário atualizado", usuario: usuarioSemSenha })
 
   } catch (error) {
-
-    return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno do servido' });
+    return res.status(500).json({ message: `Erro ao atualizar dados do usuário: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -298,11 +287,7 @@ app.delete('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Respon
 
     res.status(200).json({ message: "Usuário removido com sucesso" })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao deletar usuário: ${error}` });
-    }
+    return res.status(500).json({ message: `Erro ao excluir usuário: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -323,13 +308,9 @@ app.post('/produtos', usuarioAutenticado, async (req: Request, res: Response) =>
       }
     })
 
-    return res.status(201).json({ message: 'Produto criado com sucesso!', produto })
+    return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao criar produto: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao cadastrar produto: ${error instanceof Error ? error.message : error}` });
   }
 
 })
@@ -360,11 +341,7 @@ app.get('/produtos', async (req: Request, res: Response) => {
     res.status(200).json({ produtos });
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao listar produtos: ${error}` });
-    }
+    return res.status(500).json({ message: `Erro ao listar produtos: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -425,9 +402,9 @@ app.put('/produtos/:id', usuarioAutenticado, async (req: Request, res: Response)
       imagem: data.imagem || produtoExiste.imagem,
     }
 
-    
+
     if (!(usuario.id === produtoExiste.idVendedor)) {
-      return res.status(403).json({message: 'Você não pode alterar um produto que não é seu'});
+      return res.status(403).json({ message: 'Você não pode alterar um produto que não é seu' });
     }
 
     const produto = await prisma.produto.update({
@@ -464,7 +441,7 @@ app.delete('/produtos/:id', usuarioAutenticado, async (req: Request, res: Respon
     }
 
     if (!(usuario.id === produto.idVendedor) && !(usuario.isAdmin)) {
-      return res.status(403).json({ message: 'Você não tem permissão para excluir esse produto'})
+      return res.status(403).json({ message: 'Você não tem permissão para excluir esse produto' })
     }
 
     const produtoApagado = await prisma.produto.delete({
@@ -560,13 +537,13 @@ app.post('/pedidos', usuarioAutenticadoOpcional, async (req: Request, res: Respo
       }
     });
 
-    return res.status(201).json({ message: 'Pedido realizado com sucesso!', pedido , prazoDeEntrega: `O prazo de entrega é em ${diasEntrega}`});
+    return res.status(201).json({ message: 'Pedido realizado com sucesso!', pedido, prazoDeEntrega: `O prazo de entrega é em ${diasEntrega}` });
   } catch (error) {
     return res.status(500).json({ message: error instanceof Error ? error.message : `Erro ao fazer pedido: ${error}` });
   }
 });
 
-app.post('/pedidos/refazer', async (req: Request, res: Response) => {
+app.post('/pedidos/refazer', usuarioAutenticado, async (req: Request, res: Response) => {
   const idPedido = Number(req.body.idPedido);
   const usuario = (req as any).usuario;
 
@@ -759,7 +736,7 @@ app.delete('/pedidos/:id', usuarioAutenticado, async (req: Request, res: Respons
         where: {
           idPedido: id
         }
-      });      
+      });
 
       const pedidoCancelado = await prisma.pedido.delete({
         where: {
@@ -1026,7 +1003,7 @@ app.post("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
     const dataExpiracao = new Date();
     dataExpiracao.setHours(dataExpiracao.getHours() + 24);
 
-    
+
     const carrinhoExistente = await prisma.carrinho.findFirst({
       where: {
         OR: [
@@ -1116,7 +1093,7 @@ app.get("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
 
     if (!usuario?.id && !sessionId) {
       return res.status(400).json({ message: "Usuário não autenticado e sem sessionId válido" });
-    }    
+    }
 
     const agora = new Date();
     const carrinho = await prisma.carrinho.findMany({
@@ -1150,7 +1127,7 @@ app.delete("/carrinho/:idProduto", usuarioAutenticadoOpcional, async (req, res) 
   if (!usuario?.id && !sessionId) {
     return res.status(400).json({ error: "Usuário não autenticado e sem sessionId válido" });
   }
-  
+
 
   try {
     await prisma.carrinho.deleteMany({
@@ -1508,6 +1485,10 @@ app.delete('/admin/usuarios/:id', isAdminMiddleware, async (req: Request, res: R
       return res.status(500).json({ message: 'Erro ao excluir usuário' });
     }
   }
+})
+
+app.get('/docs', async (req: Request, res: Response) => {
+  res.send()
 })
 
 app.listen(port, () => {

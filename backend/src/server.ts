@@ -72,13 +72,31 @@ export const isAdminMiddleware = (req: Request, res: Response, next: NextFunctio
   next();
 };
 
+const usuarioSchema = z.object({
+  nome: z.string(),
+  email: z.string(),
+  senha: z.string(),
+  cpf: z.string().regex(/^\d{11}$/),
+  celular: z.string().regex(/^\d{11}$/),
+  fotoPerfil: z.string().optional(),
+});
+
 app.post('/usuarios/cadastro', async (req: Request, res: Response) => {
   try {
-    const { nome, email, senha, fotoPerfil } = req.body;
+    const parsedBody = usuarioSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({ message: 'Dados inválidos', errors: parsedBody.error.errors });
+    }
+    const { nome, email, senha, celular, cpf, fotoPerfil } = parsedBody.data;
 
-
-    const usuarioExistente = await prisma.usuario.findUnique({
-      where: { email },
+    const usuarioExistente = await prisma.usuario.findFirst({
+      where: {
+        OR: [
+          { email },
+          { cpf },
+          { celular }
+        ]
+      }
     });
 
     if (usuarioExistente) {
@@ -89,7 +107,7 @@ app.post('/usuarios/cadastro', async (req: Request, res: Response) => {
     const hashedSenha = await bcrypt.hash(senha, salt);
 
     const novoUsuario = await prisma.usuario.create({
-      data: { nome, email, senha: hashedSenha, fotoPerfil },
+      data: { nome, email, senha: hashedSenha, celular, cpf, fotoPerfil },
     });
 
 
@@ -215,14 +233,19 @@ app.put('/usuarios/senha', usuarioAutenticado, async (req: Request, res: Respons
 })
 
 app.put('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  if (isNaN(id)) {
-    return res.status(400).json({ message: 'ID inválido' })
-  }
-
-  const data = req.body;
-
   try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'ID inválido' })
+    }
+
+    const resultado = usuarioSchema.partial().safeParse(req.body);
+    if (!resultado.success) {
+      return res.status(400).json({ message: "Dados inválidos", errors: resultado.error.errors });
+    }
+    const data = resultado.data;
+
+
     const usuarioLogado = (req as any).usuario;
 
     const usuario = await prisma.usuario.findUnique({
@@ -239,6 +262,8 @@ app.put('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Response)
       nome: data.nome ? data.nome : usuario?.nome,
       email: data.email ? data.email : usuario?.email,
       senha: usuario?.senha,
+      celular: data.celular ? data.celular : usuario?.celular,
+      cpf: data.cpf ? data.cpf : usuario?.cpf,
       fotoPerfil: data.fotoPerfil ? data.fotoPerfil : usuario?.fotoPerfil,
     };
 
@@ -364,11 +389,7 @@ app.get('/produtos/:id', async (req: Request, res: Response) => {
 
     return res.status(200).json({ produto });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao tentar ao buscar produto: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao buscar por produto: ${error instanceof Error ? error.message : error}` });
   }
 
 })
@@ -453,11 +474,7 @@ app.delete('/produtos/:id', usuarioAutenticado, async (req: Request, res: Respon
     return res.status(200).json({ message: 'Produto excluído com sucesso', produto: produtoApagado })
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao tentar excluir produto: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao excluir produto: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -508,6 +525,16 @@ app.post('/pedidos', usuarioAutenticadoOpcional, async (req: Request, res: Respo
         idComprador: idComprador || null,
         sessionId: sessionId || null,
         idEnderecoEntrega: idEndereco
+      }
+    });
+
+    await prisma.pagamento.create({
+      data: {
+        idPedido: pedido.id,
+        valor: carrinho.reduce((acc, item) => acc + item.precoAtual.toNumber() * item.quantidade, 0),
+        metodoPagamento: 'cartao', // ou 'pix', 'boleto' — você pode receber do body também
+        status: 'PENDENTE',
+        idUsuario: idComprador || null
       }
     });
 
@@ -610,14 +637,10 @@ app.get('/pedidos', usuarioAutenticado, async (req: Request, res: Response) => {
       }
     });
 
-    res.status(200).json({ pedidos });
+    return res.status(200).json({ pedidos });
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao buscar pedidos: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao buscar pedidos: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -652,11 +675,7 @@ app.get('/pedidos/:id', usuarioAutenticado, async (req: Request, res: Response) 
       return res.status(403).json({ message: 'Desculpe mas você não pode acessar um pedido que não é seu' })
     }
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao procurar por pedido: ${error}` });
-    }
+    return res.status(500).json({ message: `Erro ao procurar pedido: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -700,11 +719,7 @@ app.put('/pedidos/:id', async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Você não tem permissão para atualizar esse pedido' })
     }
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao atualizar pedido: $${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao atualizar pedido: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -750,11 +765,7 @@ app.delete('/pedidos/:id', usuarioAutenticado, async (req: Request, res: Respons
     }
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao cancelar pedido: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao cancelar pedido: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -785,11 +796,7 @@ app.post('/mensagens', usuarioAutenticado, async (req: Request, res: Response) =
 
     return res.status(201).json({ message: 'Mensagem enviada com sucesso!', mensagemEnviada })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao enviar mensagem: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao enviar mensagem: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -842,11 +849,7 @@ app.get('/mensagens/:id', usuarioAutenticado, async (req: Request, res: Response
     return res.status(200).json({ mensagem });
 
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao tentar buscar a mensagem pelo id: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao buscar a mensagem: ${error instanceof Error ? error.message : error}` });
 
   }
 })
@@ -877,8 +880,7 @@ app.delete('/mensagens/:id', usuarioAutenticado, async (req: Request, res: Respo
     return res.status(200).json({ message: 'Mensagem excluída com sucesso', mensagem })
 
   } catch (error) {
-
-    return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno do servidor' });
+    return res.status(500).json({ message: `Erro ao excluir mensagem: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -916,7 +918,7 @@ app.post('/avaliacoes', usuarioAutenticado, async (req: Request, res: Response) 
     })
     return res.status(201).json({ message: "Avaliação feita com sucesso!", avaliacao: novaAvaliacao });
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : `Erro interno do servidor` })
+    return res.status(500).json({ message: `Erro ao criar avaliação: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -942,11 +944,7 @@ app.get('/avaliacoes/:idProduto', usuarioAutenticado, async (req: Request, res: 
     }
     return res.status(200).json({ avaliacoes })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message })
-    } else {
-      return res.status(500).json({ message: `Erro ao tentar buscar por avaliações: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao buscar pelas avaliações do produto: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -977,7 +975,7 @@ app.delete('/avaliacoes/:id', usuarioAutenticado, async (req: Request, res: Resp
 
     return res.status(200).json({ message: 'Avaliação excluída com sucesso!', avaliacao })
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno no servidor' });
+    return res.status(500).json({ message: `Erro ao excluir avaliação: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -1015,7 +1013,7 @@ app.post("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
 
     let carrinho;
     if (carrinhoExistente) {
-      // Se já existe, atualiza a quantidade
+
       carrinho = await prisma.carrinho.update({
         where: { id: carrinhoExistente.id },
         data: {
@@ -1024,7 +1022,7 @@ app.post("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
         }
       });
     } else {
-      // Se não existe, cria um novo
+
       carrinho = await prisma.carrinho.create({
         data: {
           idUsuario: idUsuario || null,
@@ -1039,7 +1037,7 @@ app.post("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
 
     return res.json(carrinho);
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : "Erro ao adicionar ao carrinho" });
+    return res.status(500).json({ message: `Erro ao adicionar produtos no carrinho: ${error instanceof Error ? error.message : error}` });
   }
 });
 
@@ -1079,7 +1077,7 @@ app.patch("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
 
     return res.json(carrinhoAtualizado);
   } catch (error) {
-    return res.status(500).json({ error: "Erro ao atualizar o carrinho" });
+    return res.status(500).json({ message: `Erro ao atualizar carrinho: ${error instanceof Error ? error.message : error}` });
   }
 });
 
@@ -1111,7 +1109,7 @@ app.get("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
 
     return res.status(200).json(carrinho);
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : "Erro ao buscar pelas informações do carrinho" });
+    return res.status(500).json({ message: `Erro ao buscar produtos do carrinho: ${error instanceof Error ? error.message : error}` });
 
   }
 })
@@ -1142,7 +1140,8 @@ app.delete("/carrinho/:idProduto", usuarioAutenticadoOpcional, async (req, res) 
 
     res.json({ message: "Produto removido do carrinho" });
   } catch (error) {
-    res.status(500).json({ error: "Erro ao remover do carrinho" });
+    return res.status(500).json({ message: `Erro ao excluir do carrinho: ${error instanceof Error ? error.message : error}` });
+
   }
 });
 
@@ -1223,7 +1222,7 @@ app.post('/enderecos', usuarioAutenticado, async (req: Request, res: Response) =
 
     return res.status(201).json({ message: 'Endereço cadastrado com sucesso!', endereco })
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno do servidor' });
+    return res.status(500).json({ message: `Erro ao cadastrar endereço: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -1244,11 +1243,8 @@ app.get('/enderecos', usuarioAutenticado, async (req: Request, res: Response) =>
 
     return res.status(200).json({ message: 'Endereços encontrados com sucesso', enderecos: enderecosDoUsuario })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message });
-    } else {
-      return res.status(500).json({ message: `Erro ao buscar por endereços do usuario: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao buscar endereços: ${error instanceof Error ? error.message : error}` });
+
   }
 })
 
@@ -1297,10 +1293,7 @@ app.put('/enderecos/:id', usuarioAutenticado, async (req: Request, res: Response
 
     return res.status(200).json({ message: 'Endereço atualizado com sucesso', endereco: enderecoAtualizado });
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message });
-    }
-    return res.status(500).json({ message: `Erro ao atualizar endereço: ${error}` });
+    return res.status(500).json({ message: `Erro ao atualizar endereço: ${error instanceof Error ? error.message : error}` });
   }
 })
 
@@ -1334,11 +1327,8 @@ app.delete('/enderecos/:id', usuarioAutenticado, async (req: Request, res: Respo
 
     return res.status(200).json({ message: 'Endereço excluído com sucesso' })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message });
-    } else {
-      return res.status(500).json({ message: `Erro ao excluir endereço: ${error}` })
-    }
+    return res.status(500).json({ message: `Erro ao excluir endereço: ${error instanceof Error ? error.message : error}` });
+
   }
 })
 
@@ -1377,7 +1367,8 @@ app.post('/favoritos', usuarioAutenticado, async (req: Request, res: Response) =
 
     return res.status(201).json({ message: 'Produto adicionado aos favoritos', favorito: novoFavorito });
   } catch (error) {
-    return res.status(500).json({ message: error instanceof Error ? error.message : `Erro ao adicionar favorito: ${error}` });
+    return res.status(500).json({ message: `Erro ao adicionar produot aos favoritos: ${error instanceof Error ? error.message : error}` });
+
   }
 });
 
@@ -1392,7 +1383,7 @@ app.get('/favoritos', usuarioAutenticado, async (req: Request, res: Response) =>
 
     return res.status(200).json({ message: 'Favoritos encontrados', favoritos });
   } catch (error) {
-    return res.status(500).json({ message: `Erro ao buscar favoritos: ${error}` });
+    return res.status(500).json({ message: `Erro ao buscar produtos favoritos: ${error instanceof Error ? error.message : error}` });
   }
 });
 
@@ -1426,7 +1417,7 @@ app.delete('/favoritos/:idProduto', usuarioAutenticado, async (req: Request, res
 
     return res.status(200).json({ message: 'Produto removido dos favoritos' });
   } catch (error) {
-    return res.status(500).json({ message: `Erro ao remover favorito: ${error}` });
+    return res.status(500).json({ message: `Erro ao remover produto dos favoritos: ${error instanceof Error ? error.message : error}` });
   }
 });
 
@@ -1445,11 +1436,8 @@ app.get('/admin/usuarios', async (req: Request, res: Response) => {
 
     return res.status(200).json({ usuarios })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message });
-    } else {
-      return res.status(500).json({ message: 'Erro ao tentar buscar por usuários' })
-    }
+    return res.status(500).json({ message: `Erro ao buscar por usuários: ${error instanceof Error ? error.message : error}` });
+
   }
 })
 
@@ -1479,17 +1467,154 @@ app.delete('/admin/usuarios/:id', isAdminMiddleware, async (req: Request, res: R
 
     return res.status(200).json({ message: 'Usuário excluído com sucesso', usuario: usuarioExcluido })
   } catch (error) {
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message });
-    } else {
-      return res.status(500).json({ message: 'Erro ao excluir usuário' });
-    }
+    return res.status(500).json({ message: `Erro ao excluir usuário: ${error instanceof Error ? error.message : error}` });
+
   }
 })
 
-app.get('/docs', async (req: Request, res: Response) => {
-  res.send()
-})
+// Rota para visualizar o pagamento de um pedido
+app.get('/pagamentos/:idPedido', usuarioAutenticado, async (req: Request, res: Response) => {
+  const idPedido = Number(req.params.idPedido);
+  const usuario = (req as any).usuario;
+
+  if (isNaN(idPedido)) {
+    return res.status(400).json({ message: 'ID do pedido inválido' });
+  }
+
+  try {
+
+    const where = usuario.isAdmin ? { idPedido } : { idPedido, idUsuario: usuario.id };
+
+    const pagamento = await prisma.pagamento.findFirst({
+      where
+    });
+
+    if (!pagamento) {
+      return res.status(404).json({ message: 'Pagamento não encontrado para esse pedido' });
+    }
+
+    return res.status(200).json({ pagamento });
+  } catch (error) {
+    return res.status(500).json({ message: `Erro ao buscar pagamento: ${error instanceof Error ? error.message : error}` });
+  }
+});
+
+
+// ✅ Atualização automática do status do pedido após pagamento
+app.post('/pagamentos', usuarioAutenticado, async (req: Request, res: Response) => {
+  try {
+    const { idPedido, valor, metodoPagamento } = req.body;
+    const usuario = (req as any).usuario;
+
+    const pedido = await prisma.pedido.findUnique({
+      where: { id: idPedido },
+    });
+
+    if (!pedido) {
+      return res.status(404).json({ message: 'Pedido não encontrado' });
+    }
+
+    if (pedido.idComprador !== usuario.id) {
+      return res.status(403).json({ message: 'Você não pode pagar esse pedido' });
+    }
+
+    const pagamento = await prisma.pagamento.create({
+      data: {
+        idPedido,
+        valor,
+        metodoPagamento,
+        status: 'PAGO',
+        idUsuario: usuario.id
+      }
+    });
+
+    await prisma.pedido.update({
+      where: { id: idPedido },
+      data: { status: 'PAGO' },
+    });
+
+    return res.status(201).json({ message: 'Pagamento realizado com sucesso', pagamento });
+  } catch (error) {
+    return res.status(500).json({ message: error instanceof Error ? error.message : `Erro ao registrar pagamento: ${error}` });
+  }
+});
+
+
+// ✅ Permitir que o vendedor atualize o status do pedido se o pedido for de um produto dele
+app.put('/pedidos/:id', usuarioAutenticado, async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ message: 'ID inválido' })
+  }
+  const { statusPedido } = req.body;
+  const usuario = (req as any).usuario;
+
+  if (!statusPedido) {
+    return res.status(400).json({ message: "O Status do pedido é obrigatório" })
+  }
+
+  try {
+    const pedido = await prisma.pedido.findUnique({
+      where: { id },
+      include: {
+        PedidoProduto: {
+          include: { produto: true }
+        }
+      }
+    });
+
+    if (!pedido) {
+      return res.status(404).json({ message: 'Pedido não encontrado' });
+    }
+
+    const isVendedorDoPedido = pedido.PedidoProduto.some(pp => pp.produto.idVendedor === usuario.id);
+
+    if (!usuario.isAdmin && !isVendedorDoPedido) {
+      return res.status(403).json({ message: 'Você não tem permissão para atualizar esse pedido' });
+    }
+
+    const pedidoAtualizado = await prisma.pedido.update({
+      where: { id },
+      data: { status: statusPedido }
+    });
+
+    return res.status(200).json({ message: 'Status do pedido atualizado com sucesso', pedido: pedidoAtualizado });
+  } catch (error) {
+    return res.status(500).json({ message: error instanceof Error ? error.message : `Erro ao atualizar pedido: ${error}` });
+  }
+});
+
+
+// ✅ Rota para vendedor listar apenas pedidos pagos dos seus produtos
+app.get('/pedidos/vendedor', usuarioAutenticado, async (req: Request, res: Response) => {
+  const usuario = (req as any).usuario;
+
+  try {
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        PedidoProduto: {
+          some: {
+            produto: { idVendedor: usuario.id },
+          },
+        },
+        status: 'PAGO',
+      },
+      include: {
+        PedidoProduto: {
+          include: { produto: true },
+        },
+        comprador: true,
+        enderecoEntrega: true
+      },
+    });
+
+    return res.status(200).json({ pedidos });
+  } catch (error) {
+    return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro ao buscar pedidos pagos' });
+  }
+});
+
+
 
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);

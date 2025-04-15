@@ -1784,261 +1784,362 @@
                     }
                 }
             }
-        }
-    },
-    "components": {
-        "schemas": {
-            "UsuarioCadastro": {
-                "type": "object",
-                "required": [
-                    "nome",
-                    "email",
-                    "senha"
+        },
+        "/pagamentos": {
+            "post": {
+                "summary": "Registrar pagamento de um pedido",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "idPedido": {
+                                        "type": "integer"
+                                    },
+                                    "valor": {
+                                        "type": "number",
+                                        "format": "decimal"
+                                    },
+                                    "metodoPagamento": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "idPedido",
+                                    "valor",
+                                    "metodoPagamento"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pagamento registrado com sucesso"
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado"
+                    },
+                    "400": {
+                        "description": "Pagamento já realizado ou dados inválidos"
+                    },
+                    "500": {
+                        "description": "Erro ao registrar pagamento"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "get": {
+                "summary": "Listar todos os pagamentos (admin)",
+                "responses": {
+                    "200": {
+                        "description": "Lista de pagamentos retornada"
+                    },
+                    "403": {
+                        "description": "Acesso não autorizado"
+                    },
+                    "500": {
+                        "description": "Erro ao buscar pagamentos"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/pagamentos/{idPedido}": {
+            "get": {
+                "summary": "Buscar pagamento por ID do pedido",
+                "parameters": [
+                    {
+                        "name": "idPedido",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
                 ],
-                "properties": {
-                    "nome": {
-                        "type": "string"
+                "responses": {
+                    "200": {
+                        "description": "Pagamento encontrado"
                     },
-                    "email": {
-                        "type": "string"
+                    "404": {
+                        "description": "Pagamento não encontrado"
                     },
-                    "senha": {
-                        "type": "string",
-                        "description": "Senha criptografa com bcrypt"
-                    },
-                    "fotoPerfil": {
-                        "type": "string",
-                        "format": "uri"
+                    "500": {
+                        "description": "Erro ao buscar pagamento"
                     }
-                }
-            },
-            "Usuario": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "nome": {
-                        "type": "string"
-                    },
-                    "email": {
-                        "type": "string"
-                    },
-                    "senha": {
-                        "type": "string",
-                        "description": "Senha criptografa com bcrypt"
-                    },
-                    "fotoPerfil": {
-                        "type": "string",
-                        "format": "uri"
-                    },
-                    "isAdmin": {
-                        "type": "boolean"
-                    },
-                    "createdAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "updatedAt": {
-                        "type": "string",
-                        "format": "date-time"
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
                     }
-                }
-            },
-            "UsuarioSemSenha": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "nome": {
-                        "type": "string"
-                    },
-                    "email": {
-                        "type": "string"
-                    },
-                    "fotoPerfil": {
-                        "type": "string",
-                        "format": "uri"
-                    },
-                    "isAdmin": {
-                        "type": "boolean"
-                    },
-                    "createdAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "updatedAt": {
-                        "type": "string",
-                        "format": "date-time"
+                ]
+            }
+        },
+        "components": {
+            "schemas": {
+                "UsuarioCadastro": {
+                    "type": "object",
+                    "required": [
+                        "nome",
+                        "email",
+                        "senha"
+                    ],
+                    "properties": {
+                        "nome": {
+                            "type": "string"
+                        },
+                        "email": {
+                            "type": "string"
+                        },
+                        "senha": {
+                            "type": "string",
+                            "description": "Senha criptografa com bcrypt"
+                        },
+                        "fotoPerfil": {
+                            "type": "string",
+                            "format": "uri"
+                        }
                     }
-                }
-            },
-            "Produto": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "nome": {
-                        "type": "string"
-                    },
-                    "descricao": {
-                        "type": "string"
-                    },
-                    "preco": {
-                        "type": "number",
-                        "format": "float"
-                    },
-                    "quantidade": {
-                        "type": "integer"
-                    },
-                    "categoria": {
-                        "type": "string"
-                    },
-                    "imagemUrl": {
-                        "type": "string",
-                        "format": "uri"
-                    },
-                    "idVendedor": {
-                        "type": "integer"
-                    },
-                    "createdAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "updatedAt": {
-                        "type": "string",
-                        "format": "date-time"
+                },
+                "Usuario": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "nome": {
+                            "type": "string"
+                        },
+                        "email": {
+                            "type": "string"
+                        },
+                        "senha": {
+                            "type": "string",
+                            "description": "Senha criptografa com bcrypt"
+                        },
+                        "fotoPerfil": {
+                            "type": "string",
+                            "format": "uri"
+                        },
+                        "isAdmin": {
+                            "type": "boolean"
+                        },
+                        "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
                     }
-                }
-            },
-            "ProdutoCadastro": {
-                "type": "object",
-                "properties": {
-                    "nome": {
-                        "type": "string"
-                    },
-                    "descricao": {
-                        "type": "string"
-                    },
-                    "preco": {
-                        "type": "number",
-                        "format": "float"
-                    },
-                    "quantidade": {
-                        "type": "integer"
-                    },
-                    "categoria": {
-                        "type": "string"
-                    },
-                    "imagemUrl": {
-                        "type": "string",
-                        "format": "uri"
-                    },
-                    "idVendedor": {
-                        "type": "integer"
+                },
+                "UsuarioSemSenha": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "nome": {
+                            "type": "string"
+                        },
+                        "email": {
+                            "type": "string"
+                        },
+                        "fotoPerfil": {
+                            "type": "string",
+                            "format": "uri"
+                        },
+                        "isAdmin": {
+                            "type": "boolean"
+                        },
+                        "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
                     }
-                }
-            },
-            "PedidoProduto": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "idPedido": {
-                        "type": "integer"
-                    },
-                    "idProduto": {
-                        "type": "integer"
-                    },
-                    "quantidade": {
-                        "type": "integer"
-                    },
-                    "produto": {
-                        "$ref": "#/components/schemas/Produto"
+                },
+                "Produto": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "nome": {
+                            "type": "string"
+                        },
+                        "descricao": {
+                            "type": "string"
+                        },
+                        "preco": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "quantidade": {
+                            "type": "integer"
+                        },
+                        "categoria": {
+                            "type": "string"
+                        },
+                        "imagemUrl": {
+                            "type": "string",
+                            "format": "uri"
+                        },
+                        "idVendedor": {
+                            "type": "integer"
+                        },
+                        "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
                     }
-                }
-            },
-            "Pedido": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "idComprador": {
-                        "type": "integer"
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "PENDENTE",
-                            "ENVIADO",
-                            "ENTREGUE"
-                        ]
-                    },
-                    "createdAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "updatedAt": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "PedidoProduto": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/PedidoProduto"
+                },
+                "ProdutoCadastro": {
+                    "type": "object",
+                    "properties": {
+                        "nome": {
+                            "type": "string"
+                        },
+                        "descricao": {
+                            "type": "string"
+                        },
+                        "preco": {
+                            "type": "number",
+                            "format": "float"
+                        },
+                        "quantidade": {
+                            "type": "integer"
+                        },
+                        "categoria": {
+                            "type": "string"
+                        },
+                        "imagemUrl": {
+                            "type": "string",
+                            "format": "uri"
+                        },
+                        "idVendedor": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "PedidoProduto": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "idPedido": {
+                            "type": "integer"
+                        },
+                        "idProduto": {
+                            "type": "integer"
+                        },
+                        "quantidade": {
+                            "type": "integer"
+                        },
+                        "produto": {
+                            "$ref": "#/components/schemas/Produto"
+                        }
+                    }
+                },
+                "Pedido": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "integer"
+                        },
+                        "idComprador": {
+                            "type": "integer"
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "PENDENTE",
+                                "ENVIADO",
+                                "ENTREGUE"
+                            ]
+                        },
+                        "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "PedidoProduto": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/PedidoProduto"
+                            }
                         }
                     }
                 }
+            },
+            "securitySchemes": {
+                "bearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT"
+                }
             }
         },
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
+        "tags": [
+            {
+                "name": "Usuários",
+                "description": "Gerenciamento de usuários cadastrados no banco de dados"
+            },
+            {
+                "name": "Pedidos",
+                "description": "Operações relacionadas aos pedidos do marketplace"
+            },
+            {
+                "name": "Produtos",
+                "description": "Gerenciamento de produtos cadastrados no banco de dados"
+            },
+            {
+                "name": "Mensagens",
+                "description": "Operações relacionadas ao envio e recebimento de mensagens"
+            },
+            {
+                "name": "Avaliações",
+                "description": "Operações relacionadas às avaliações de produtos"
+            },
+            {
+                "name": "Carrinho",
+                "description": "Gerenciamento de produtos adicionados ao carrinho"
+            },
+            {
+                "name": "Endereços",
+                "description": "Operações relacionadas ao cadastro de endereços do usuário"
+            },
+            {
+                "name": "Favoritos",
+                "description": "Operações relacionadas gerenciamento de produtos escolhidos como favoritos"
+            },
+            {
+                "name": "Admin",
+                "description": "Operações relacionadas ao administrador do Martekplace"
             }
-        }
-    },
-    "tags": [
-        {
-            "name": "Usuários",
-            "description": "Gerenciamento de usuários cadastrados no banco de dados"
-        },
-        {
-            "name": "Pedidos",
-            "description": "Operações relacionadas aos pedidos do marketplace"
-        },
-        {
-            "name": "Produtos",
-            "description": "Gerenciamento de produtos cadastrados no banco de dados"
-        },
-        {
-            "name": "Mensagens",
-            "description": "Operações relacionadas ao envio e recebimento de mensagens"
-        },
-        {
-            "name": "Avaliações",
-            "description": "Operações relacionadas às avaliações de produtos"
-        },
-        {
-            "name": "Carrinho",
-            "description": "Gerenciamento de produtos adicionados ao carrinho"
-        },
-        {
-            "name": "Endereços",
-            "description": "Operações relacionadas ao cadastro de endereços do usuário"
-        },
-        {
-            "name": "Favoritos",
-            "description": "Operações relacionadas gerenciamento de produtos escolhidos como favoritos"
-        },
-        {
-            "name": "Admin",
-            "description": "Operações relacionadas ao administrador do Martekplace"
-        }
-    ]
+        ]
+    }
 }

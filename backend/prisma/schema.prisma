@@ -15,6 +15,7 @@ datasource db {
 
 enum StatusPedido {
   PENDENTE
+  PAGO
   ENVIADO
   ENTREGUE
 }
@@ -22,6 +23,8 @@ enum StatusPedido {
 model Usuario {
   id                 Int         @id @default(autoincrement())
   nome               String
+  cpf                String
+  celular            String
   email              String      @unique
   senha              String
   fotoPerfil         String?
@@ -44,6 +47,7 @@ model Usuario {
 enum TipoProduto {
   ELETRONICOS
   ROUPA
+  CALÇADOS
   LIVRO
   MOVEIS
   AUTOMOVEIS

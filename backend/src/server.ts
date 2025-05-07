@@ -318,20 +318,32 @@ app.delete('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Respon
 
 app.post('/produtos', usuarioAutenticado, async (req: Request, res: Response) => {
   try {
-    const { nome, descricao, preco, qtdEstoque, imagem, tipoProduto } = req.body;
+    const { nome, descricao, preco, qtdEstoque, imagens, tipoProduto } = req.body;
     const idVendedor = (req as any).usuario?.id;
 
+    const dataProduto: any = {
+      nome,
+      descricao,
+      qtdEstoque,
+      preco,
+      idVendedor,
+      tipo: tipoProduto.toUpperCase()
+    }
+
+    if (imagens && Array.isArray(imagens) && imagens.length > 0) {
+      dataProduto.imagens = {
+        create: imagens.slice(0, 6).map((url: string) => ({
+          urlImagem: url
+        }))
+      };
+    }
+
     const produto = await prisma.produto.create({
-      data: {
-        nome,
-        descricao,
-        qtdEstoque,
-        preco,
-        imagem,
-        idVendedor,
-        tipo: tipoProduto.toUpperCase()
+      data: dataProduto,
+      include: {
+        imagens: true
       }
-    })
+    });
 
     return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto })
   } catch (error) {
@@ -360,6 +372,9 @@ app.get('/produtos', async (req: Request, res: Response) => {
           lte: precoMaxNum,
         },
         tipo: tipoFiltrado,
+      },
+      include: {
+        imagens: true
       }
     });
 
@@ -380,6 +395,9 @@ app.get('/produtos/:id', async (req: Request, res: Response) => {
     const produto = await prisma.produto.findUnique({
       where: {
         id
+      },
+      include: {
+        imagens: true
       }
     })
 
@@ -406,11 +424,18 @@ app.put('/produtos/:id', usuarioAutenticado, async (req: Request, res: Response)
     const produtoExiste = await prisma.produto.findUnique({
       where: {
         id
+      },
+      include: {
+        imagens: true
       }
     })
 
     if (!produtoExiste) {
       return res.status(404).json({ message: 'Produto não encontrado' })
+    }
+
+    if (!(usuario.id === produtoExiste.idVendedor)) {
+      return res.status(403).json({ message: 'Você não pode alterar um produto que não é seu' });
     }
 
     const data = req.body;
@@ -420,13 +445,9 @@ app.put('/produtos/:id', usuarioAutenticado, async (req: Request, res: Response)
       descricao: data.descricao || produtoExiste.descricao,
       preco: data.preco || produtoExiste.preco,
       qtdEstoque: data.qtdEstoque || produtoExiste.qtdEstoque,
-      imagem: data.imagem || produtoExiste.imagem,
+      tipo: data.tipo || produtoExiste.tipo,
     }
-
-
-    if (!(usuario.id === produtoExiste.idVendedor)) {
-      return res.status(403).json({ message: 'Você não pode alterar um produto que não é seu' });
-    }
+    
 
     const produto = await prisma.produto.update({
       where: {
@@ -435,7 +456,33 @@ app.put('/produtos/:id', usuarioAutenticado, async (req: Request, res: Response)
       data: dataUpdate
     })
 
-    return res.status(200).json({ produto })
+    if (Array.isArray(data.imagens)) {
+      await prisma.imagemProduto.deleteMany({
+        where: {
+          produtoId: id
+        }
+      })
+    }
+
+    const imagensNovas = data.imagens.slice(0, 6).map((url: string) => ({
+      url,
+      produtosId: id
+    }))
+
+    await prisma.imagemProduto.createMany({
+      data: imagensNovas
+    })
+
+    const produtoComImagens = await prisma.produto.findUnique({
+      where: {
+        id
+      },
+      include: {
+        imagens: true
+      }
+    })
+
+    return res.status(200).json({ produto: produtoComImagens })
 
   } catch (error) {
     return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno no servidor' });
@@ -454,6 +501,9 @@ app.delete('/produtos/:id', usuarioAutenticado, async (req: Request, res: Respon
     const produto = await prisma.produto.findUnique({
       where: {
         id
+      },
+      include: {
+        imagens: true
       }
     })
 
@@ -464,6 +514,12 @@ app.delete('/produtos/:id', usuarioAutenticado, async (req: Request, res: Respon
     if (!(usuario.id === produto.idVendedor) && !(usuario.isAdmin)) {
       return res.status(403).json({ message: 'Você não tem permissão para excluir esse produto' })
     }
+
+    await prisma.imagemProduto.deleteMany({
+      where: {
+        produtoId: id
+      }
+    })
 
     const produtoApagado = await prisma.produto.delete({
       where: {

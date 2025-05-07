@@ -60,7 +60,7 @@ model Produto {
   descricao      String
   preco          Decimal
   qtdEstoque     Int
-  imagem         String?
+  imagens        ImagemProduto[]
   idVendedor     Int
   vendedor       Usuario          @relation(fields: [idVendedor], references: [id])
   tipo           TipoProduto
@@ -75,10 +75,19 @@ model Produto {
   @@map("produtos")
 }
 
+model ImagemProduto {
+  id        Int     @id @default(autoincrement())
+  url       String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId Int
+
+  @@map("imagens_produto")
+}
+
 model Pedido {
   id                  Int             @id @default(autoincrement())
-  idComprador         Int
-  comprador           Usuario         @relation(fields: [idComprador], references: [id])
+  idComprador         Int?
+  comprador           Usuario?        @relation(fields: [idComprador], references: [id])
   status              StatusPedido
   sessionId           String?
   dataPedido          DateTime        @default(now())

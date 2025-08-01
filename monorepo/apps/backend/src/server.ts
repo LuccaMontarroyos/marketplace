@@ -8,20 +8,29 @@ import { z } from 'zod';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from "../swagger.json";
 import { enderecoSchema } from "../../../packages/shared/schemas/enderecos";
+import cors from 'cors';
 dotenv.config();
 
 const prisma = new PrismaClient();
 const app = express();
 const port = 5000;
 
-app.use(express.json());
+app.use(cors({
+  origin: '*',
+}))
+
+app.use(express.json({ limit: '10mb' }));
 
 cron.schedule("0 * * * *", async () => {
   console.log("Removendo itens expirados do carrinho...");
   await limparCarrinhosExpirados();
 });
 
-const SECRET_KEY = process.env.JWT || "seu segredo super secreto";
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET não definida no .env");
+}
+
+const SECRET_KEY = process.env.JWT_SECRET || "seu segredo super secreto";
 
 app.get('/', async (req: Request, res: Response) => {
   const products = await prisma.produto.findMany();
@@ -101,7 +110,7 @@ app.post('/usuarios/cadastro', async (req: Request, res: Response) => {
     });
 
     if (usuarioExistente) {
-      return res.status(409).json({ message: 'Email do usuário já cadastrado' });
+      return res.status(409).json({ message: 'Email, cpf ou celular já cadastrados' });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -114,9 +123,18 @@ app.post('/usuarios/cadastro', async (req: Request, res: Response) => {
 
     const { senha: _, ...usuarioSemSenha } = novoUsuario;
 
+    const token = jwt.sign({
+      id: novoUsuario.id,
+      email: novoUsuario.email,
+      isAdmin: novoUsuario.isAdmin,
+    },
+      SECRET_KEY,
+      { expiresIn: "7d" }
+    )
+
     return res.status(201).json({
       message: 'Usuário cadastrado com sucesso!',
-      usuario: usuarioSemSenha
+      usuario: usuarioSemSenha, token
     });
 
   } catch (error) {
@@ -145,7 +163,7 @@ app.post('/usuarios/login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Senha incorreta!' });
     }
 
-    const EXPIRES_IN = process.env.JWT_EXPIRES_IN as string || '1h';
+    const EXPIRES_IN = process.env.JWT_EXPIRES_IN as string || '7d';
 
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email, isAdmin: usuario.isAdmin },
@@ -187,7 +205,7 @@ app.get('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Response)
       return res.status(403).json({ message: 'Você não pode acessar dados de outro usuário' })
     }
 
-    return res.status(200).json({ usuario })
+    return res.status(200).json(usuario);
 
   } catch (error) {
     return res.status(500).json({ message: `Erro ao buscar usuário: ${error instanceof Error ? error.message : error}` });
@@ -448,7 +466,7 @@ app.put('/produtos/:id', usuarioAutenticado, async (req: Request, res: Response)
       qtdEstoque: data.qtdEstoque || produtoExiste.qtdEstoque,
       tipo: data.tipo || produtoExiste.tipo,
     }
-    
+
 
     const produto = await prisma.produto.update({
       where: {
@@ -1287,7 +1305,7 @@ app.get('/enderecos', usuarioAutenticado, async (req: Request, res: Response) =>
       return res.status(404).json({ message: 'Usuário não foi possui nenhum endereço cadastrado' })
     }
 
-    return res.status(200).json({ message: 'Endereços encontrados com sucesso', enderecos: enderecosDoUsuario })
+    return res.status(200).json(enderecosDoUsuario)
   } catch (error) {
     return res.status(500).json({ message: `Erro ao buscar endereços: ${error instanceof Error ? error.message : error}` });
 
@@ -1315,7 +1333,12 @@ app.put('/enderecos/:id', usuarioAutenticado, async (req: Request, res: Response
       cidade: data.cidade,
       cep: data.cep,
       estado: data.estado,
+      numero: data.numero,
+      bairro: data.bairro,
+      complemento: data.complemento,
+      pontoReferencia: data.pontoReferencia
     };
+
 
     const endereco = await prisma.endereco.findFirst({
       where: {

@@ -114,6 +114,10 @@ button {
   background-size: cover;
 }
 
+input {
+  outline: none;
+}
+
 .input-field {
   display: flex;
   align-items: center;
@@ -161,4 +165,14 @@ button {
 
 .bg-verde-claro {
   background-color: #1f999f
+}
+
+.botao-cinza {
+  background-color: #f1f4f9;
+  color: #ffffff;
+}
+
+.botao-cinza:hover {
+  background-color: #96a7b0;
+  color: #ffffff;
 }

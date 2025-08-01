@@ -1,8 +1,48 @@
+"use client";
 import { IconLockPassword, IconMail, IconUser } from "@tabler/icons-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from 'react';
+import { loginUsuario } from "@/services/auth";
+import { salvarToken } from "@/utils/token";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function page() {
+export default function Page() {
+
+    const [email, setEmail] = useState("");
+    const [senha, setSenha] = useState("");
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const handleLogin = async () => {
+        if (!email || !senha) {
+            alert("Preencha todos os campos");
+            return;
+        }
+
+        try {
+            const usuarioLogado = {
+                email: email,
+                senha: senha,
+            }
+            const resposta = await loginUsuario(usuarioLogado);
+            console.log("resposta do login: ", resposta);
+
+            if (resposta.token) {
+                salvarToken(resposta.token);
+                const redirectTo = searchParams.get("from") || "/";
+                router.push(redirectTo);
+            }
+            
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            const mensagem = error.response?.data?.message || "Erro ao fazer login. Tente novamente.";
+            alert(mensagem);
+        }
+    };
+
+
     return (
         <div className="login h-lvh">
             <Link href={"/"}><Image src={"/LogoMarketplace.png"} alt={"Logo do marketplace"} width={120} height={120} /></Link>
@@ -16,19 +56,19 @@ export default function page() {
 
                     <div className="input-field">
                         <IconMail className="icon" size={20} />
-                        <input className="" type="email" placeholder="Email" />
+                        <input onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email" />
                     </div>
                     <div className="input-field">
                         <IconLockPassword className="icon" size={20} />
-                        <input type="password" placeholder="Senha" />
+                        <input onChange={(e) => setSenha(e.target.value)} type="password" placeholder="Senha" />
                     </div>
 
                     <div className="flex gap-15 text-sm mb-10">
-                        <label className=""><input type="checkbox" /> Lembrar-me</label>
+                        <label className=""><input type="checkbox" />Lembrar-me</label>
                         <a href="#">Esqueceu a senha?</a>
                     </div>
 
-                    <button className="botao py-2">Entrar</button>
+                    <button className="botao py-2" onClick={handleLogin}>Entrar</button>
                 </div>
 
             </div>

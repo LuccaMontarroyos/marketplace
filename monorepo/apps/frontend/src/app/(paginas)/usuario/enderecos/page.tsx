@@ -1,47 +1,48 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { IconPencil, IconTrash, IconArrowNarrowDown } from '@tabler/icons-react';
 import { z } from "zod";
 import { enderecoSchema as schema } from "@/../../packages/shared/schemas/enderecos";
+import { buscarEnderecosDoUsuario, cadastrarEndereco, editarEnderecoDoUsuario, excluirEndereco } from '@/services/endereco';
+import { Endereco } from '@/types/Endereco';
 
-type Endereco = z.infer<typeof schema>;
+type EnderecoFormData = z.infer<typeof schema>;
 
 export default function Page() {
+  const [enderecos, setEnderecos] = useState<Endereco[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [enderecos, setEnderecos] = useState<Endereco[]>([
-    {
-      logradouro: 'Rua A',
-      numero: '123',
-      complemento: 'Apartamento 101',
-      cep: '12345-678',
-      bairro: 'Centro',
-      cidade: 'Cidade A',
-      estado: 'SP',
-    },
-    {
-      logradouro: 'Av. B',
-      numero: '456',
-      complemento: 'Casa',
-      cep: '23456-789',
-      bairro: 'Alvorada',
-      cidade: 'Cidade B',
-      estado: 'RJ',
-    },
-  ]);
-
   const [editandoIndex, setEditandoIndex] = useState<number | null>(null);
-  const [enderecoEditado, setEnderecoEditado] = useState<Endereco>({ ...enderecos[0] });
+  const [enderecoEditado, setEnderecoEditado] = useState<Partial<Endereco>>({});
+
+
+  const buscarEnderecos = async (): Promise<Endereco[]> => {
+    const enderecosEncontrados = await buscarEnderecosDoUsuario();
+    setEnderecos(enderecosEncontrados);
+    console.log(enderecosEncontrados);
+    return enderecosEncontrados;
+  }
+
+  useEffect(() => {
+    buscarEnderecos();
+  }, [])
+
 
   const handleEditar = (index: number) => {
     setEditandoIndex(index);
     setEnderecoEditado({ ...enderecos[index] });
   };
 
-  const handleSalvar = (index: number) => {
-    const enderecoLimpo = {
-      ...enderecoEditado,
-      cep: enderecoEditado.cep.replace(/\D/g, ''),
-    }
+  const handleSalvar = async () => {
+    const enderecoLimpo: EnderecoFormData = {
+      logradouro: enderecoEditado.logradouro ?? '',
+      numero: enderecoEditado.numero ?? '',
+      complemento: enderecoEditado.complemento,
+      cep: enderecoEditado.cep?.replace(/\D/g, '') ?? '',
+      bairro: enderecoEditado.bairro ?? '',
+      cidade: enderecoEditado.cidade ?? '',
+      estado: enderecoEditado.estado ?? '',
+      pontoReferencia: enderecoEditado.pontoReferencia,
+    };
 
     const result = schema.safeParse(enderecoLimpo);
 
@@ -54,14 +55,38 @@ export default function Page() {
       setErrors(fieldErrors);
       return;
     }
-    const novos = [...enderecos];
-    novos[index] = enderecoEditado;
-    setEnderecos(novos);
-    setEditandoIndex(null);
-    setErrors({});
+
+    try {
+      if (enderecoEditado.id) {
+        const data = await editarEnderecoDoUsuario(enderecoEditado.id, enderecoLimpo);
+        const enderecoAtualizado = data.endereco;
+        setEnderecos((prev) =>
+          prev.map((e) => (e.id === enderecoEditado.id ? enderecoAtualizado : e))
+        );
+        
+      } else {
+        await cadastrarEndereco(enderecoLimpo);
+      }
+
+      await buscarEnderecos();
+      setEditandoIndex(null);
+      setErrors({});
+    } catch (error) {
+      console.error("Erro ao salvar endereço:", error);
+    }
+
   };
 
-  const handleExcluir = (index: number) => {
+  const handleExcluir = async (index: number) => {
+    const endereco = enderecos[index];
+    if (endereco.id) {
+      try {
+        await excluirEndereco(endereco.id);
+      } catch (error) {
+        console.error("Erro ao excluir endereço", error);
+        return;
+      }
+    }
     const novos = [...enderecos];
     novos.splice(index, 1);
     setEnderecos(novos);
@@ -79,6 +104,16 @@ export default function Page() {
   const handleChange = (campo: string, valor: string) => {
     setEnderecoEditado((prev) => ({ ...prev, [campo]: valor }));
   };
+
+  if (!enderecos) {
+    return (
+      <div className="bg-white h-lvh">
+        <p className="text-center text-black pt-10">
+          Carregando endereços do usuário...
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-white min-h-screen py-10 px-4 texto-azul">
@@ -112,7 +147,7 @@ export default function Page() {
                 <input
                   type='text'
                   maxLength={9}
-                  value={formatarCEP(enderecoEditado.cep)}
+                  value={formatarCEP(enderecoEditado.cep ?? '')}
                   onChange={(e) => handleChange('cep', e.target.value)}
                   className='border px-2 py-1 w-full'
                   placeholder='CEP'
@@ -137,6 +172,12 @@ export default function Page() {
                   value={enderecoEditado.estado}
                   onChange={(e) => handleChange('estado', e.target.value)}
                 /> {errors.estado && <p className="text-red-500 text-sm">{errors.estado}</p>}
+                <input
+                  className="border px-2 py-1 w-full"
+                  placeholder='Ponto de referência(opcional)'
+                  value={enderecoEditado.pontoReferencia}
+                  onChange={(e) => handleChange('pontoReferencia', e.target.value)}
+                /> {errors.estado && <p className="text-red-500 text-sm">{errors.pontoReferencia}</p>}
               </div>
             ) : (
               <div className="space-y-1">
@@ -149,13 +190,14 @@ export default function Page() {
                 <p>
                   {endereco.cidade}, {endereco.estado}
                 </p>
+                {endereco.pontoReferencia ?? <p>{endereco.pontoReferencia}</p>}
               </div>
             )}
 
             <div className="flex gap-2 justify-end pt-2">
               {editandoIndex === index ? (
                 <button
-                  onClick={() => handleSalvar(index)}
+                  onClick={() => handleSalvar()}
                   className="flex items-center px-3 gap-2 border rounded bg-green-100 hover:bg-green-200"
                 >
                   <IconArrowNarrowDown size={20} /> Salvar
@@ -179,7 +221,7 @@ export default function Page() {
         ))}
         <div
           onClick={() => {
-            const novo = {
+            const novoEndereco: Partial<Endereco> = {
               logradouro: '',
               numero: '',
               complemento: '',
@@ -187,9 +229,11 @@ export default function Page() {
               bairro: '',
               cidade: '',
               estado: '',
+              pontoReferencia: '',
             };
-            setEnderecos([...enderecos, novo]);
-            setEnderecoEditado(novo);
+
+            setEnderecos([...enderecos, novoEndereco as Endereco]);
+            setEnderecoEditado(novoEndereco);
             setEditandoIndex(enderecos.length);
             setErrors({});
           }}

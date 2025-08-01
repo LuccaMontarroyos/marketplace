@@ -1,15 +1,20 @@
 "use client";
-import { useState } from "react";
 import { NumericFormat } from "react-number-format";
 
-export default function InputPreco() {
-    const [preco, setPreco] = useState('');
+export interface InputPrecoProps {
+    value: number;
+    onChange: (value: number) => void;
+}
 
+export default function InputPreco({ value, onChange }: InputPrecoProps) {
     return (
         <div className="w-full">
             <NumericFormat
-                value={preco}
-                onValueChange={(values) => setPreco(values.value)}
+                value={value}
+                onValueChange={(values) => {
+                    const raw = values.floatValue;
+                    onChange(raw || 0);
+                }}
                 thousandSeparator="."
                 decimalSeparator=","
                 prefix="R$ "

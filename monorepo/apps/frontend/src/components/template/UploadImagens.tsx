@@ -2,34 +2,42 @@
 
 import { IconPhoto } from "@tabler/icons-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
-export default function UploadImagens() {
+export interface UploadImagensProps {
+  value?: string[];
+  onChangeImagens: (imagens: string[]) => void;
+}
+
+export default function UploadImagens({ value = [], onChangeImagens }: UploadImagensProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imagens, setImagens] = useState<string[]>([]);
+  // const [imagens, setImagens] = useState<string[]>([]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const novosArquivos = Array.from(files).slice(0, 6 - imagens.length); // limita no máximo 6
+    const novosArquivos = Array.from(files).slice(0, 6 - value.length); // limita no máximo 6
     novosArquivos.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagens((prev) => [...prev, reader.result as string]);
+        onChangeImagens([...value, reader.result as string]);
+        // setImagens((prev) => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
 
-    event.target.value = ""; // reset input pra permitir mesmo arquivo
+    event.target.value = "";
   };
 
   const removerImagem = (index: number) => {
-    setImagens((prev) => prev.filter((_, i) => i !== index));
+    const novas = value.filter((_, i) => i !== index);
+    onChangeImagens(novas);
+    // setImagens((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleUploadClick = () => {
-    if (imagens.length < 6) {
+    if (value.length < 6) {
       fileInputRef.current?.click();
     }
   };
@@ -37,7 +45,7 @@ export default function UploadImagens() {
   return (
     <div className="w-full bg-white max-w-140 rounded-xl border-2 border-gray-400 p-4">
       <div className="grid grid-cols-3 gap-4 min-h-45 max-h-45 overflow-y-auto">
-        {imagens.map((img, index) => (
+        {value.map((img, index) => (
           <div key={index} className="relative group">
             <Image
               src={img}
@@ -54,7 +62,7 @@ export default function UploadImagens() {
             </button>
           </div>
         ))}
-        {imagens.length < 6 && (
+        {value.length < 6 && (
           <div
             onClick={handleUploadClick}
             className="flex items-center justify-center w-full h-32 border-2 border-gray-300 rounded-md cursor-pointer hover:border-verde transition"

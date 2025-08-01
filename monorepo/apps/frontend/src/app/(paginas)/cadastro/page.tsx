@@ -7,9 +7,21 @@ import { useEffect } from "react";
 import { IconCamera, IconEye, IconEyeOff, IconUpload } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
+import { cadastrarUsuario } from "@/services/auth";
+import { useRouter, useSearchParams } from 'next/navigation';
+import { salvarToken } from "@/utils/token";
 
-// Validação com Zod
-const schema = z.object({
+//TRECHO A SER IMPLEMENTADO NAS ROTAS QUE POSSAM DIRECIONAR PARA CÁ:
+/*import { useRouter } from 'next/router';
+
+const router = useRouter();
+
+const irParaCadastro = () => {
+  router.push(`/cadastro?from=${encodeURIComponent(router.asPath)}`);
+};*/
+
+
+const usuarioSchema = z.object({
     nome: z.string().min(1, "Nome é obrigatório").regex(/^[^\d]*$/, "O nome não pode conter números"),
     email: z.string().email("Email inválido"),
     senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
@@ -24,13 +36,13 @@ const schema = z.object({
         .length(11, "CPF deve conter 11 dígitos")
         .regex(/^\d{11}$/, "CPF deve conter apenas números"),
     imagem: z.any().optional(),
-}).refine((data)=> data.senha === data.confirmSenha, {
+}).refine((data) => data.senha === data.confirmSenha, {
     message: 'As senhas não coincidem',
     path: ["confirmSenha"],
 }
 );
 
-type FormInputs = z.infer<typeof schema>;
+type FormInputs = z.infer<typeof usuarioSchema>;
 
 export default function FormularioDeCadastro() {
     const {
@@ -39,9 +51,14 @@ export default function FormularioDeCadastro() {
         setValue,
         formState: { errors },
     } = useForm<FormInputs>({
-        resolver: zodResolver(schema),
+        resolver: zodResolver(usuarioSchema),
     });
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const from = searchParams.get("from") || "/";
+
+    // const [redirectTo, setRedirectTo] = useState('/');
     const [preview, setPreview] = useState<string | null>(null);
     const [cameraAtiva, setCameraAtiva] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -57,22 +74,45 @@ export default function FormularioDeCadastro() {
 
 
     const onSubmit = async (data: FormInputs) => {
-        const formData = new FormData();
-        formData.append("nome", data.nome);
-        formData.append("email", data.email);
-        formData.append("senha", data.senha);
-        formData.append("celular", data.celular);
-        formData.append("cpf", data.cpf);
+
+        let fotoPerfil = undefined;
+
         if (data.imagem?.[0]) {
-            formData.append("imagem", data.imagem[0]);
+            fotoPerfil = await new Promise<string | undefined>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if (typeof reader.result === 'string') resolve(reader.result);
+                    else resolve(undefined);
+                };
+                reader.onerror = () => reject(null);
+                reader.readAsDataURL(data.imagem[0]);
+            });
         }
 
-        // await fetch("http://localhost:3001/usuarios/cadastro", {
-        //   method: "POST",
-        //   body: formData,
-        // });
+        const cadastroUsuario = {
+            nome: data.nome,
+            email: data.email,
+            senha: data.senha,
+            celular: data.celular,
+            cpf: data.cpf,
+            fotoPerfil: fotoPerfil,
+        }
 
-        alert("Cadastro enviado!");
+        try {
+            const resposta = await cadastrarUsuario(cadastroUsuario);
+            console.log(resposta.token);
+            if (resposta.token) {
+                salvarToken(resposta.token);
+                router.push(from);
+            }
+            alert("Usuário cadastrado com sucesso");
+            setPreview(null);
+        } catch (error) {
+            console.log("Erro no cadastro:", error);
+            alert("Erro ao cadastrar usuário. Tente novamente.");
+        }
+
+
     };
 
     const ligarCamera = async () => {
@@ -117,7 +157,6 @@ export default function FormularioDeCadastro() {
         }
     };
 
-
     const removerImagem = () => {
         setPreview(null);
         setValue("imagem", undefined);
@@ -131,17 +170,17 @@ export default function FormularioDeCadastro() {
 
     return (
         <div className="login h-min-lvh flex justify-center items-start">
-            <Link href={"/"}><Image src={"/LogoMarketplace.png"} alt={"Logo do marketplace"} width={120} height={120}/></Link>
+            <Link href={"/"}><Image src={"/LogoMarketplace.png"} alt={"Logo do marketplace"} width={120} height={120} /></Link>
             <form onSubmit={handleSubmit(onSubmit)} className="rounded-md max-w-xl mx-auto py-15 flex flex-col gap-4 w-[600px]">
                 <h2 className="text-2xl font-semibold">Cadastre-se</h2>
                 <div className="input-field">
                     <input {...register("nome")} placeholder="Nome" className="border p-2 rounded" />
-                {errors.nome && <span className="text-gray-400 font-semibold text-sm">{errors.nome.message}</span>}
+                    {errors.nome && <span className="text-gray-400 font-semibold text-sm">{errors.nome.message}</span>}
                 </div>
 
                 <div className="input-field">
                     <input {...register("email")} placeholder="Email" type="email" className="border p-2 rounded" />
-                {errors.email && <span className="text-gray-400 font-semibold text-sm">{errors.email.message}</span>}
+                    {errors.email && <span className="text-gray-400 font-semibold text-sm">{errors.email.message}</span>}
                 </div>
 
                 <div className="input-field">
@@ -150,8 +189,8 @@ export default function FormularioDeCadastro() {
                 </div>
 
                 <div className="input-field">
-                <input {...register("cpf")} maxLength={11} placeholder="CPF (somente números)" className="border p-2 rounded" />
-                {errors.cpf && <span className="text-gray-400 font-semibold text-sm">{errors.cpf.message}</span>}
+                    <input {...register("cpf")} maxLength={11} placeholder="CPF (somente números)" className="border p-2 rounded" />
+                    {errors.cpf && <span className="text-gray-400 font-semibold text-sm">{errors.cpf.message}</span>}
                 </div>
 
                 <div className="input-field relative">
@@ -168,7 +207,7 @@ export default function FormularioDeCadastro() {
                     >
                         {showPassword ? <IconEye size={20} /> : <IconEyeOff size={20} />}
                     </button>
-                {errors.senha && <span className="text-gray-400 font-semibold text-sm mr-10">{errors.senha.message}</span>}
+                    {errors.senha && <span className="text-gray-400 font-semibold text-sm mr-10">{errors.senha.message}</span>}
                 </div>
 
                 <div className="input-field relative">
@@ -185,7 +224,7 @@ export default function FormularioDeCadastro() {
                     >
                         {showPassword ? <IconEye size={20} /> : <IconEyeOff size={20} />}
                     </button>
-                {errors.confirmSenha && <span className="text-gray-400 font-semibold text-sm mr-10">{errors.confirmSenha.message}</span>}
+                    {errors.confirmSenha && <span className="text-gray-400 font-semibold text-sm mr-10">{errors.confirmSenha.message}</span>}
                 </div>
 
                 {!preview && (
@@ -259,36 +298,24 @@ export default function FormularioDeCadastro() {
                         )}
                     </>
                 )}
-                
+
 
                 <canvas ref={canvasRef} className="hidden text-" />
 
                 {preview && (
                     <div className="flex flex-col items-center gap-5">
                         <p className="font-semibold">Prévia da imagem:</p>
-                        <img src={preview} alt="Prévia" className="w-32 h-32 rounded-full object-cover border-pink-400" />
+                        <Image src={preview} alt="Prévia" className="w-32 h-32 rounded-full object-cover" width={32} height={32}/>
                         <button type="button" onClick={removerImagem} className="bg-gray-400 py-2 px-4 rounded cursor-pointer w-50">
                             Remover imagem
                         </button>
                     </div>
                 )}
 
-                <button type="submit" className="botao-azul text-white py-2 rounded">
+                <button onSubmit={() => onSubmit} type="submit" className="botao-azul text-white py-2 rounded">
                     Cadastrar
                 </button>
             </form>
         </div>
     );
 }
-
-
-// export default function page() {
-//     return (
-//         <div className="bg-verde h-lvh flex items-center justify-center">
-//             <div className="w-1/2 bg-white h-1/2 rounded-xl">
-//                 <h1>Cadastre-se</h1>
-//                 <input placeholder="Nome" className="py-2 px-10"/>
-//             </div>
-//         </div>
-//     )
-// };

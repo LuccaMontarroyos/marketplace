@@ -48,26 +48,13 @@ function SortableImage({
 }
 
 export default function MeusProdutos() {
-    // const [produtos, setProdutos] = useState<Produto[]>();
-    const [produtos, setProdutos] = useState([
-        {
-            nome: 'Camiseta Preta',
-            descricao: 'Camiseta básica de algodão',
-            preco: 49.9,
-            qtdEstoque: 20,
-            tipo: 'ROUPA',
-            imagens: [
-                '/imagem1.jpg',
-                '/imagem2.jpg',
-                '/imagem3.jpg',
-            ],
-        },
-    ]);
+    const [produtos, setProdutos] = useState<Produto[]>();
 
-    const buscarProdutos = async () => {
+    const buscarProdutos = async (): Promise<Produto[]> => {
         const produtosEncontrados = await buscarProdutosDoUsuario();
-        // setProdutos(produtosEncontrados);
+        setProdutos(produtosEncontrados);
         console.log(produtosEncontrados);
+        return produtosEncontrados;
     }
 
 
@@ -85,13 +72,17 @@ export default function MeusProdutos() {
 
     const handleEditar = (index: number) => {
         setEditandoIndex(index);
-        setProdutoEditado({ ...produtos[index], imagens: [...produtos[index].imagens] });
+        if (produtos) {
+            setProdutoEditado({ ...produtos[index], imagens: [...produtos[index].imagens] });
+        }
     };
 
     const handleExcluirProduto = (index: number) => {
-        const novos = [...produtos];
-        novos.splice(index, 1);
-        setProdutos(novos);
+        if (produtos) {
+            const novos = [...produtos];
+            novos.splice(index, 1);
+            setProdutos(novos);
+        }
     };
 
     const handleSalvar = (index: number) => {
@@ -106,12 +97,13 @@ export default function MeusProdutos() {
             setErrosValidacao(erros);
             return;
         }
-
-        const novos = [...produtos];
-        novos[index] = produtoEditado;
-        setProdutos(novos);
-        setEditandoIndex(null);
-        setErrosValidacao({});
+        if (produtos) {
+            const novos = [...produtos];
+            novos[index] = produtoEditado;
+            setProdutos(novos);
+            setEditandoIndex(null);
+            setErrosValidacao({});
+        }
     };
 
     const handleExcluirImagem = (i: number) => {
@@ -153,7 +145,7 @@ export default function MeusProdutos() {
         <div className="min-h-screen bg-gray-50 py-10 px-4 texto-azul">
             <h1 className="text-3xl font-bold text-center mb-10">Meus Produtos</h1>
             <div className="space-y-8 max-w-5xl mx-auto">
-                {produtos.map((produto, index) => (
+                {produtos && produtos.map((produto, index) => (
                     <div key={index} className="bg-white p-6 rounded-lg shadow-md space-y-4">
                         {editandoIndex === index ? (
                             <>
@@ -253,7 +245,7 @@ export default function MeusProdutos() {
                                 </div>
                                 <h2 className="text-xl font-semibold">{produto.nome}</h2>
                                 <p className="text-gray-700">{produto.descricao}</p>
-                                <p className="text-lg font-bold mt-2">R$ {produto.preco.toFixed(2)}</p>
+                                <p className="text-lg font-bold mt-2">R$ {Number(produto.preco).toFixed(2)}</p>
                                 <p className="text-sm text-gray-600">Quantidade em estoque: {produto.qtdEstoque}</p>
                                 <p className="text-md">Tipo: {produto.tipo}</p>
 

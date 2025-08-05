@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { IconEye, IconEyeOff, IconPencil } from "@tabler/icons-react";
 import { atualizarUsuario, trocarSenha } from "@/services/usuario";
+import { toast } from "react-toastify";
 
 export default function PerfilUsuario() {
     const { usuario } = useAuth();
@@ -76,9 +77,9 @@ export default function PerfilUsuario() {
             });
 
             setEditando(false);
-            console.log("Dados atualizados com sucesso!");
+            toast.success("Dados atualizados com sucesso!");
         } catch (error) {
-            console.error("Erro ao atualizar usuário", error)
+            toast.error("Erro ao atualizar dados do usuário:", error);
         }
     };
 
@@ -98,8 +99,9 @@ export default function PerfilUsuario() {
                 novaSenha: "",
                 confirmaNovaSenha: "",
             })
+            toast.success("Senha alterada com sucesso!");
         } catch (error: any) {
-            alert(error.response.data.message || "Erro ao trocar a senha.");
+            toast.error("Erro ao alterar senha: ", error);
         }
 
     };

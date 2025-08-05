@@ -5,6 +5,7 @@ import { z } from "zod";
 import { enderecoSchema as schema } from "@/../../packages/shared/schemas/enderecos";
 import { buscarEnderecosDoUsuario, cadastrarEndereco, editarEnderecoDoUsuario, excluirEndereco } from '@/services/endereco';
 import { Endereco } from '@/types/Endereco';
+import { toast } from 'react-toastify';
 
 type EnderecoFormData = z.infer<typeof schema>;
 
@@ -63,9 +64,10 @@ export default function Page() {
         setEnderecos((prev) =>
           prev.map((e) => (e.id === enderecoEditado.id ? enderecoAtualizado : e))
         );
-        
+        toast.success("Endereço alterado com sucesso!");
       } else {
         await cadastrarEndereco(enderecoLimpo);
+        toast.success("Endereço cadastrado com sucesso!");
       }
 
       await buscarEnderecos();
@@ -73,6 +75,7 @@ export default function Page() {
       setErrors({});
     } catch (error) {
       console.error("Erro ao salvar endereço:", error);
+      toast.error("Erro ao salvar endereço");
     }
 
   };
@@ -84,6 +87,7 @@ export default function Page() {
         await excluirEndereco(endereco.id);
       } catch (error) {
         console.error("Erro ao excluir endereço", error);
+        toast.error("Erro ao excluir endereço");
         return;
       }
     }

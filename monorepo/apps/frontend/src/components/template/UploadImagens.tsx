@@ -5,8 +5,8 @@ import Image from "next/image";
 import { useRef } from "react";
 
 export interface UploadImagensProps {
-  value?: string[];
-  onChangeImagens: (imagens: string[]) => void;
+  value?: File[];
+  onChangeImagens: (imagens: File[]) => void;
 }
 
 export default function UploadImagens({ value = [], onChangeImagens }: UploadImagensProps) {
@@ -18,14 +18,7 @@ export default function UploadImagens({ value = [], onChangeImagens }: UploadIma
     if (!files) return;
 
     const novosArquivos = Array.from(files).slice(0, 6 - value.length); // limita no máximo 6
-    novosArquivos.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onChangeImagens([...value, reader.result as string]);
-        // setImagens((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+    onChangeImagens([...value, ...novosArquivos]);
 
     event.target.value = "";
   };
@@ -45,10 +38,10 @@ export default function UploadImagens({ value = [], onChangeImagens }: UploadIma
   return (
     <div className="w-full bg-white max-w-140 rounded-xl border-2 border-gray-400 p-4">
       <div className="grid grid-cols-3 gap-4 min-h-45 max-h-45 overflow-y-auto">
-        {value.map((img, index) => (
+        {value.map((file, index) => (
           <div key={index} className="relative group">
             <Image
-              src={img}
+              src={URL.createObjectURL(file)}
               alt={`Imagem ${index + 1}`}
               className="object-cover rounded-md w-full h-32"
               width={120}

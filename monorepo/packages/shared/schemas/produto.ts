@@ -25,5 +25,4 @@ export const cadastroProdutoSchema = z.object({
         "AUTOMOVEIS",
         "OUTROS"
     ], {required_error: "Selecione uma categoria para o produto"}),
-    imagem: z.string()
 })

@@ -2,7 +2,7 @@ import { obterToken } from "@/utils/token";
 import api from "./api";
 import { DadosAtualizacaoEndereco, DadosCadastroEndereco, Endereco } from "@/types/Endereco";
 
-export async function buscarEnderecosDoUsuario () {
+export async function buscarEnderecosDoUsuario ():Promise<Endereco[]> {
     const token = obterToken();
     const response = await api.get<Endereco[]>("/enderecos", {
         headers: {

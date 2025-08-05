@@ -21,14 +21,13 @@ enum TipoProduto {
 }
 
 export interface CadastroProdutoProps {
-    nomeProduto: string
-    descricao: string
-    preco: number
-    qtdEstoque: number
-    idVendedor: number
-    tipo: TipoProduto
-    imagem?: string
-}
+    nomeProduto: string;
+    descricao: string;
+    preco: number;
+    qtdEstoque: number;
+    idVendedor: number;
+    tipo: TipoProduto;
+}       
 
 export default function CadastroProduto() {
     const router = useRouter();
@@ -41,9 +40,8 @@ export default function CadastroProduto() {
         preco: 0,
         qtdEstoque: 1,
         tipo: "OUTROS",
-        imagem: "",
     });
-    const [imagens, setImagens] = useState<string[]>([]);
+    const [imagens, setImagens] = useState<File[]>([]);
 
     const [errors, setErrors] = useState<Partial<Record<keyof CadastroProdutoFormData, string>>>({});
 
@@ -67,8 +65,8 @@ export default function CadastroProduto() {
             form.append("qtdEstoque", formData.qtdEstoque.toString());
             form.append("tipoProduto", formData.tipo);
 
-            imagens.slice(0, 6).forEach((img) => {
-                form.append("imagens", img);
+            imagens.slice(0, 6).forEach((file) => {
+                form.append("imagens", file);
             });
 
             await cadastrarProduto(form);
@@ -92,15 +90,10 @@ export default function CadastroProduto() {
                     <div>
                         <label>Adicione até 6 imagens</label>
                         <UploadImagem value={imagens}
-                            onChangeImagens={(lista) => {
-                                setImagens(lista);
-                                setFormData((prev: any) => ({
-                                    ...prev,
-                                    imagem: lista[0] || "", // salva só a primeira por enquanto
-                                }));
+                            onChangeImagens={(listaDeFiles) => {
+                                setImagens(listaDeFiles);
                             }}
                         />
-                        {errors.imagem && <span className="text-red-500 text-sm">{errors.imagem}</span>}
                     </div>
                     <div className="flex flex-col">
                         <label htmlFor="priceInput">Preço</label>

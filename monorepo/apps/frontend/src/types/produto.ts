@@ -4,9 +4,9 @@ export interface Produto {
     id: number;
     nome: string;
     preco: number;
-    estoque: number;
+    qtdEstoque: number;
     idVendedor: number;
-    imagens: string[];
+    imagens: File[];
     descricao: string;
     tipo: TipoProduto;
 }
@@ -16,7 +16,7 @@ export interface CadastroDeProduto {
     preco: string;
     qtdEstoque: number;
     idVendedor: number;
-    imagens: string[];
+    imagens: File[];
     descricao: string;
     tipo: TipoProduto;
 }

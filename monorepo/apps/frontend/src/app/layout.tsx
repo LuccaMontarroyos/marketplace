@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Montserrat } from "next/font/google";
-import { AuthProvider } from "@/context/AuthContext";
+import { ClientProviders } from "./ClientProviders";
 
 export const metadata: Metadata = {
   title: "LB Marketplace",
@@ -21,9 +21,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${font.className}`}>
-        <AuthProvider>
+        <ClientProviders>
           {children}
-        </AuthProvider>
+        </ClientProviders>
       </body>
     </html>
   );

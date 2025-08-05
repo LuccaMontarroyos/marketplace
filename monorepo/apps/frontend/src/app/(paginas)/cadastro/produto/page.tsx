@@ -8,6 +8,7 @@ import { useState } from "react";
 import z from "zod";
 import { cadastrarProduto } from "@/services/produto";
 import {useRouter} from "next/navigation";
+import { toast } from "react-toastify";
 
 enum TipoProduto {
     ELETRONICOS = "Eletrônicos",
@@ -71,11 +72,11 @@ export default function CadastroProduto() {
             });
 
             await cadastrarProduto(form);
-            
+            toast.success("Produto criado com sucesso!");
             router.push("/");
         } catch (error) {
             console.error("Erro ao cadastrar:", error);
-            alert("Erro ao cadastrar produto");
+            toast.error("Erro ao criar produto");
         }
     }
     return (

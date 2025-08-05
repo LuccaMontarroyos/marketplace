@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/perfil/:path*',
-    '/usuario/enderecos:path*',
-    '/usuario/produtos:path*'
+    '/usuario/enderecos/:path*',
+    '/usuario/produtos/:path*'
   ],
 };

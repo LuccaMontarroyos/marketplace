@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DndContext, closestCenter, useSensor, useSensors, MouseSensor, TouchSensor, } from '@dnd-kit/core';
 import {
     SortableContext, useSortable, arrayMove, rectSortingStrategy,
@@ -7,6 +7,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { produtoSchema } from "../../../../../../../packages/shared/schemas/produto";
 import { Produto } from "@/types/Produto";
+import { buscarProdutosDoUsuario } from '@/services/produto';
 
 // Componente individual da imagem com suporte a drag
 function SortableImage({
@@ -54,6 +55,7 @@ export default function MeusProdutos() {
             descricao: 'Camiseta básica de algodão',
             preco: 49.9,
             qtdEstoque: 20,
+            tipo: 'ROUPA',
             imagens: [
                 '/imagem1.jpg',
                 '/imagem2.jpg',
@@ -63,9 +65,15 @@ export default function MeusProdutos() {
     ]);
 
     const buscarProdutos = async () => {
-        
-        setProdutos();
+        const produtosEncontrados = await buscarProdutosDoUsuario();
+        // setProdutos(produtosEncontrados);
+        console.log(produtosEncontrados);
     }
+
+
+    useEffect(() => {
+        buscarProdutos();
+    }, [])
 
 
     const [editandoIndex, setEditandoIndex] = useState<number | null>(null);
@@ -247,6 +255,7 @@ export default function MeusProdutos() {
                                 <p className="text-gray-700">{produto.descricao}</p>
                                 <p className="text-lg font-bold mt-2">R$ {produto.preco.toFixed(2)}</p>
                                 <p className="text-sm text-gray-600">Quantidade em estoque: {produto.qtdEstoque}</p>
+                                <p className="text-md">Tipo: {produto.tipo}</p>
 
                                 <div className="flex gap-4 justify-end pt-2">
                                     <button

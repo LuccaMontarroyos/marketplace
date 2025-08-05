@@ -31,6 +31,7 @@ export default function Page() {
 
             if (resposta.token) {
                 salvarToken(resposta.token);
+                
                 const redirectTo = searchParams.get("from") || "/";
                 router.push(redirectTo);
             }

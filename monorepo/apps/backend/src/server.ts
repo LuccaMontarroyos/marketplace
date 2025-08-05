@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
-import { PrismaClient, TipoProduto } from '@prisma/client';
+import { Prisma, PrismaClient, TipoProduto } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import cron from 'node-cron';
 import dotenv from "dotenv";
@@ -9,7 +9,28 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from "../swagger.json";
 import { enderecoSchema } from "../../../packages/shared/schemas/enderecos";
 import cors from 'cors';
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { Decimal } from '@prisma/client/runtime/library';
+
 dotenv.config();
+
+const uploadDir = path.resolve(__dirname, '../../uploads');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ storage });
 
 const prisma = new PrismaClient();
 const app = express();
@@ -20,6 +41,8 @@ app.use(cors({
 }))
 
 app.use(express.json({ limit: '10mb' }));
+
+app.use('/uploads', express.static(uploadDir));
 
 cron.schedule("0 * * * *", async () => {
   console.log("Removendo itens expirados do carrinho...");
@@ -335,24 +358,51 @@ app.delete('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Respon
   }
 })
 
-app.post('/produtos', usuarioAutenticado, async (req: Request, res: Response) => {
+app.get('/produtos/usuario', usuarioAutenticado, async (req: Request, res: Response) => {
+  const usuario = (req as any).usuario;
+
   try {
-    const { nome, descricao, preco, qtdEstoque, imagens, tipoProduto } = req.body;
+    const produtos = await prisma.produto.findMany({
+      where: {
+        idVendedor: usuario.id
+      },
+      include: {
+        imagens: true
+      }
+    });
+    if (produtos.length === 0) {
+      return res.status(404).json({ message: 'Usuário não foi possui nenhum produto cadastrado' })
+    }
+
+    return res.status(200).json(produtos);
+  } catch (error) {
+    return res.status(500).json({ message: `Erro ao buscar produtos: ${error instanceof Error ? error.message : error}` });
+
+  }
+})
+
+app.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (req: Request, res: Response) => {
+  try {
+    const { nome, descricao, preco, qtdEstoque, tipoProduto } = req.body;
     const idVendedor = (req as any).usuario?.id;
+
+    const arquivos = req.files as Express.Multer.File[];
+
+    const precoDecimal = new Decimal(preco);
 
     const dataProduto: any = {
       nome,
       descricao,
-      qtdEstoque,
-      preco,
+      qtdEstoque: Number(qtdEstoque),
+      preco: precoDecimal,
       idVendedor,
       tipo: tipoProduto.toUpperCase()
-    }
+    };
 
-    if (imagens && Array.isArray(imagens) && imagens.length > 0) {
+    if (arquivos && arquivos.length > 0) {
       dataProduto.imagens = {
-        create: imagens.slice(0, 6).map((url: string) => ({
-          urlImagem: url
+        create: arquivos.map((file) => ({
+          url: `/uploads/${file.filename}` // Aqui você define a URL como quiser
         }))
       };
     }
@@ -364,12 +414,49 @@ app.post('/produtos', usuarioAutenticado, async (req: Request, res: Response) =>
       }
     });
 
-    return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto })
+    return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto });
+
   } catch (error) {
     return res.status(500).json({ message: `Erro ao cadastrar produto: ${error instanceof Error ? error.message : error}` });
   }
+});
 
-})
+
+// app.post('/produtos', usuarioAutenticado, async (req: Request, res: Response) => {
+//   try {
+//     const { nome, descricao, preco, qtdEstoque, imagens, tipoProduto } = req.body;
+//     const idVendedor = (req as any).usuario?.id;
+
+//     const dataProduto: any = {
+//       nome,
+//       descricao,
+//       qtdEstoque,
+//       preco,
+//       idVendedor,
+//       tipo: tipoProduto.toUpperCase()
+//     }
+
+//     if (imagens && Array.isArray(imagens) && imagens.length > 0) {
+//       dataProduto.imagens = {
+//         create: imagens.slice(0, 6).map((url: string) => ({
+//           urlImagem: url
+//         }))
+//       };
+//     }
+
+//     const produto = await prisma.produto.create({
+//       data: dataProduto,
+//       include: {
+//         imagens: true
+//       }
+//     });
+
+//     return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto })
+//   } catch (error) {
+//     return res.status(500).json({ message: `Erro ao cadastrar produto: ${error instanceof Error ? error.message : error}` });
+//   }
+
+// })
 
 app.get('/produtos', async (req: Request, res: Response) => {
   try {
@@ -432,81 +519,77 @@ app.get('/produtos/:id', async (req: Request, res: Response) => {
 })
 
 
-app.put('/produtos/:id', usuarioAutenticado, async (req: Request, res: Response) => {
+app.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), async (req: Request, res: Response) => {
   try {
     const usuario = (req as any).usuario;
     const id = Number(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ message: 'ID inválido' })
+      return res.status(400).json({ message: 'ID inválido' });
     }
 
     const produtoExiste = await prisma.produto.findUnique({
-      where: {
-        id
-      },
-      include: {
-        imagens: true
-      }
-    })
+      where: { id },
+      include: { imagens: true }
+    });
 
     if (!produtoExiste) {
-      return res.status(404).json({ message: 'Produto não encontrado' })
+      return res.status(404).json({ message: 'Produto não encontrado' });
     }
 
-    if (!(usuario.id === produtoExiste.idVendedor)) {
+    if (usuario.id !== produtoExiste.idVendedor) {
       return res.status(403).json({ message: 'Você não pode alterar um produto que não é seu' });
     }
 
-    const data = req.body;
+    const { nome, descricao, preco, qtdEstoque, tipo } = req.body;
+    const arquivos = req.files as Express.Multer.File[];
 
-    const dataUpdate = {
-      nome: data.nome || produtoExiste.nome,
-      descricao: data.descricao || produtoExiste.descricao,
-      preco: data.preco || produtoExiste.preco,
-      qtdEstoque: data.qtdEstoque || produtoExiste.qtdEstoque,
-      tipo: data.tipo || produtoExiste.tipo,
-    }
+  
+    const precoDecimal = preco ? new Decimal(preco) : produtoExiste.preco;
 
+    
+    const dataUpdate: any = {
+      nome: nome || produtoExiste.nome,
+      descricao: descricao || produtoExiste.descricao,
+      preco: precoDecimal,
+      qtdEstoque: qtdEstoque !== undefined ? Number(qtdEstoque) : produtoExiste.qtdEstoque,
+      tipo: tipo || produtoExiste.tipo
+    };
 
-    const produto = await prisma.produto.update({
-      where: {
-        id
-      },
-      data: dataUpdate
-    })
-
-    if (Array.isArray(data.imagens)) {
-      await prisma.imagemProduto.deleteMany({
-        where: {
-          produtoId: id
+    
+    if (arquivos && arquivos.length > 0) {
+      
+      for (const imagem of produtoExiste.imagens) {
+        const pathArquivo = path.resolve(__dirname, '../../uploads', path.basename(imagem.url));
+        if (fs.existsSync(pathArquivo)) {
+          fs.unlinkSync(pathArquivo);
         }
-      })
+      }
+
+      
+      await prisma.imagemProduto.deleteMany({
+        where: { produtoId: id }
+      });
+
+      
+      dataUpdate.imagens = {
+        create: arquivos.slice(0, 6).map(file => ({
+          url: `/uploads/${file.filename}`
+        }))
+      };
     }
 
-    const imagensNovas = data.imagens.slice(0, 6).map((url: string) => ({
-      url,
-      produtosId: id
-    }))
+    const produtoAtualizado = await prisma.produto.update({
+      where: { id },
+      data: dataUpdate,
+      include: { imagens: true }
+    });
 
-    await prisma.imagemProduto.createMany({
-      data: imagensNovas
-    })
-
-    const produtoComImagens = await prisma.produto.findUnique({
-      where: {
-        id
-      },
-      include: {
-        imagens: true
-      }
-    })
-
-    return res.status(200).json({ produto: produtoComImagens })
-
+    return res.status(200).json({ produto: produtoAtualizado });
   } catch (error) {
     return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno no servidor' });
   }
-})
+});
+
 
 app.delete('/produtos/:id', usuarioAutenticado, async (req: Request, res: Response) => {
   try {
@@ -1298,7 +1381,7 @@ app.get('/enderecos', usuarioAutenticado, async (req: Request, res: Response) =>
         idUsuario: usuario.id
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'asc'
       }
     })
     if (enderecosDoUsuario.length === 0) {

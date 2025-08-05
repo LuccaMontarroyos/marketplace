@@ -1,19 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
 import CarrinhoItem from "./CarrinhoItem"
 import NavBarItem from "./NavBarItem"
 import { IconShoppingCart } from "@tabler/icons-react";
 import { useRouter } from 'next/navigation';
-import { obterToken, removerToken } from "@/utils/token";
+import { useAuth } from "@/context/AuthContext";
 
 export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => void }) {
-    const [usuarioLogado, setUsuarioLogado] = useState(false);
+    const { token, logout } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-        const token = obterToken();
-        setUsuarioLogado(!!token);
-    }, [])
+    const usuarioLogado = !!token;
 
     const irParaCadastro = () => {
         const currentPath = window.location.pathname + window.location.search;
@@ -32,7 +28,7 @@ export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => v
             {usuarioLogado ? (
                 <nav className="flex gap-20 text-md">
                     <NavBarItem link={"/cadastro/produto"} texto={"Cadastrar produto"} />
-                    <NavBarItem onClick={removerToken} texto={"Refazer pedido"} />
+                    <NavBarItem onClick={() => {logout();router.push("/login");}} texto={"Refazer pedido"} />
                     <CarrinhoItem onClick={onToggleCarrinho} link="" icone={IconShoppingCart} />
                     <NavBarItem link={"/perfil"} texto={"Perfil"} />
                 </nav>

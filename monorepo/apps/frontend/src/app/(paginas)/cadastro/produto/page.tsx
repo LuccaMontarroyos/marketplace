@@ -6,6 +6,8 @@ import Link from "next/link";
 import { cadastroProdutoSchema } from "../../../../../../../packages/shared/schemas/produto";
 import { useState } from "react";
 import z from "zod";
+import { cadastrarProduto } from "@/services/produto";
+import {useRouter} from "next/navigation";
 
 enum TipoProduto {
     ELETRONICOS = "Eletrônicos",
@@ -28,6 +30,7 @@ export interface CadastroProdutoProps {
 }
 
 export default function CadastroProduto() {
+    const router = useRouter();
 
     type CadastroProdutoFormData = z.infer<typeof cadastroProdutoSchema>;
 
@@ -43,7 +46,7 @@ export default function CadastroProduto() {
 
     const [errors, setErrors] = useState<Partial<Record<keyof CadastroProdutoFormData, string>>>({});
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const parsed = cadastroProdutoSchema.safeParse(formData);
         if (!parsed.success) {
             const fieldErrors: any = {};
@@ -54,7 +57,26 @@ export default function CadastroProduto() {
             setErrors(fieldErrors);
             return;
         }
-        console.log('Ta dando certo');
+
+        try {
+            const form = new FormData();
+            form.append("nome", formData.nomeProduto);
+            form.append("descricao", formData.descricao);
+            form.append("preco", formData.preco.toString());
+            form.append("qtdEstoque", formData.qtdEstoque.toString());
+            form.append("tipoProduto", formData.tipo);
+
+            imagens.slice(0, 6).forEach((img) => {
+                form.append("imagens", img);
+            });
+
+            await cadastrarProduto(form);
+            
+            router.push("/");
+        } catch (error) {
+            console.error("Erro ao cadastrar:", error);
+            alert("Erro ao cadastrar produto");
+        }
     }
     return (
         <div className="p-10 bg-gray-100 text-black h-screen flex flex-col">

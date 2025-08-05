@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import type { Usuario } from "../types/Usuario";
-import { obterToken, salvarToken } from "@/utils/token";
+import { obterToken, salvarToken, removerToken } from "@/utils/token";
 import { buscarUsuarioPorId } from "@/services/usuario";
 
 interface JwtPayload {
@@ -33,10 +33,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const atualizarToken = (novoToken: string | null) => {
     if (novoToken) {
-      localStorage.setItem("token", novoToken);
+      salvarToken(novoToken); // salva corretamente no cookie
       setToken(novoToken);
     } else {
-      localStorage.removeItem("token");
+      removerToken(); // remove corretamente do cookie
       setToken(null);
       setUsuario(null);
     }
@@ -60,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log("Dados do usuário: ", dados);
             setUsuario(dados);
             salvarToken(tokenSalvo);
+            setToken(tokenSalvo);
           } else {
             logout();
           }
@@ -67,6 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log(`Erro ao buscar usuário pelo id: ${error}`)
           logout();
         }
+      } else {
+        logout();
       }
     };
     carregarUsuario();

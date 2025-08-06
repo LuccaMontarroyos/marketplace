@@ -192,7 +192,7 @@ export default function MeusProdutos() {
                                                 const src =
                                                     img instanceof File
                                                         ? URL.createObjectURL(img)
-                                                        : img.url;
+                                                        : img.url.startsWith("/") ? `${baseURL}${img.url}` : img.url;
 
                                                 return (
                                                     <SortableImage
@@ -267,7 +267,7 @@ export default function MeusProdutos() {
                                 >
                                     <option value="" disabled>Selecione o tipo</option>
                                     {Object.entries(TipoProduto).map(([key, label]) => (
-                                        <option key={key} value={label}>
+                                        <option key={key} value={key}>
                                             {label}
                                         </option>
                                     ))}
@@ -307,7 +307,7 @@ export default function MeusProdutos() {
                                 <p className="text-gray-700">{produto.descricao}</p>
                                 <p className="text-lg font-bold mt-2">R$ {Number(produto.preco).toFixed(2)}</p>
                                 <p className="text-sm text-gray-600">Quantidade em estoque: {produto.qtdEstoque}</p>
-                                <p className="text-md">Tipo: {produto.tipo}</p>
+                                <p className="text-md">Tipo: {TipoProduto[produto.tipo]}</p>
 
                                 <div className="flex gap-4 justify-end pt-2">
                                     <button

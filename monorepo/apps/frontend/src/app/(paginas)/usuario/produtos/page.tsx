@@ -76,13 +76,16 @@ export default function MeusProdutos() {
     const [editandoIndex, setEditandoIndex] = useState<number | null>(null);
     const [produtoEditado, setProdutoEditado] = useState<any>(null);
     const [errosValidacao, setErrosValidacao] = useState<Record<string, string[]>>({});
+    const [imagensRemovidas, setImagensRemovidas] = useState<number[]>([]);
 
 
     const sensores = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
 
     const handleEditar = (index: number) => {
         setEditandoIndex(index);
+        setImagensRemovidas([]);
         if (produtos) {
+            console.log("O array de produtos[index].imagens: ", produtos[index].imagens);
             setProdutoEditado({ ...produtos[index], imagens: [...produtos[index].imagens] });
         }
     };
@@ -97,6 +100,8 @@ export default function MeusProdutos() {
     };
 
     const handleSalvar = async (index: number) => {
+
+        console.log("[Salvar] Imagens atuais: ", produtoEditado.imagens);
 
         const parsed = produtoSchema.safeParse(produtoEditado);
 
@@ -114,6 +119,7 @@ export default function MeusProdutos() {
         formData.append("preco", String(parseFloat(produtoEditado.preco)));
         formData.append("qtdEstoque", String(parseInt(produtoEditado.qtdEstoque)));
         formData.append("tipo", produtoEditado.tipo);
+        formData.append("imagensRemovidas", JSON.stringify(imagensRemovidas));
 
 
         produtoEditado.imagens.forEach((imagem: ImagemProduto) => {
@@ -124,6 +130,7 @@ export default function MeusProdutos() {
 
         try {
             const produtoSalvo = await atualizarProduto(formData, produtoEditado.id);
+            console.log("[Salvar] Produto salvo (resposta backend):", produtoSalvo.produto);
             const novos = [...produtos!];
             novos[index] = produtoSalvo.produto;
             setProdutos(novos);
@@ -136,7 +143,13 @@ export default function MeusProdutos() {
 
     const handleExcluirImagem = (i: number) => {
         setProdutoEditado((prev: any) => {
+            const imagemRemovida = prev.imagens[i];
+
+            if (!(imagemRemovida instanceof File)) {
+                setImagensRemovidas((prevRemovidas) => [...prevRemovidas, imagemRemovida.id]);
+            }
             const novasImagens = prev.imagens.filter((_: ImagemProduto, idx: number) => idx !== i);
+            
             return {
                 ...prev,
                 imagens: [...novasImagens]
@@ -147,10 +160,16 @@ export default function MeusProdutos() {
     const handleAdicionarImagens = (files: FileList | null) => {
         if (!files) return;
         const novas = Array.from(files);
-        setProdutoEditado((prev: any) => ({
-            ...prev,
-            imagens: [...prev.imagens, ...novas].slice(0, 6), // max 6 imagens
-        }));
+        setProdutoEditado((prev: any) => {
+            const imagensAntes = prev.imagens || [];
+            console.log("[Adicionar imagens] Antes: ", imagensAntes);
+            const imagensNovas = [...imagensAntes, ...novas].slice(0, 6);
+            console.log("[Adicionar imagens] Depois: ", imagensNovas);
+            return {
+                ...prev,
+                imagens: imagensNovas, // max 6 imagens
+            }
+        });
     };
 
     const handleChangeCampo = (campo: string, valor: string | number) => {

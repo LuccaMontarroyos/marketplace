@@ -543,10 +543,10 @@ app.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), async (
     const { nome, descricao, preco, qtdEstoque, tipo } = req.body;
     const arquivos = req.files as Express.Multer.File[];
 
-  
+
     const precoDecimal = preco ? new Decimal(preco) : produtoExiste.preco;
 
-    
+
     const dataUpdate: any = {
       nome: nome || produtoExiste.nome,
       descricao: descricao || produtoExiste.descricao,
@@ -555,22 +555,30 @@ app.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), async (
       tipo: tipo || produtoExiste.tipo
     };
 
-    
-    if (arquivos && arquivos.length > 0) {
-      
-      for (const imagem of produtoExiste.imagens) {
+    const imagensRemovidas = req.body.imagensRemovidas ? JSON.parse(req.body.imagensRemovidas) : [];
+
+    if (Array.isArray(imagensRemovidas) && imagensRemovidas.length > 0) {
+      const imagensParaRemover = produtoExiste.imagens.filter(img => imagensRemovidas.includes(img.id));
+
+      for (const imagem of imagensParaRemover) {
         const pathArquivo = path.resolve(__dirname, '../../uploads', path.basename(imagem.url));
         if (fs.existsSync(pathArquivo)) {
           fs.unlinkSync(pathArquivo);
         }
       }
 
-      
       await prisma.imagemProduto.deleteMany({
-        where: { produtoId: id }
+        where: {
+          id: { in: imagensRemovidas },
+          produtoId: id
+        }
       });
+    }
 
-      
+
+
+    if (arquivos && arquivos.length > 0) {
+
       dataUpdate.imagens = {
         create: arquivos.slice(0, 6).map(file => ({
           url: `/uploads/${file.filename}`

@@ -121,6 +121,19 @@ export default function MeusProdutos() {
         formData.append("tipo", produtoEditado.tipo);
         formData.append("imagensRemovidas", JSON.stringify(imagensRemovidas));
 
+        const ordemImagensExistentes = produtoEditado.imagens
+            .map((img: ImagemProduto, index: number) => {
+                if (!(img instanceof File)) {
+                    return { id: img.id, ordem: index + 1 }; // Ordem iniciando em 1 para bater com backend
+                }
+                return null;
+            })
+            .filter((item) => item !== null);
+
+        formData.append("imagensOrdem", JSON.stringify(ordemImagensExistentes));
+
+
+
 
         produtoEditado.imagens.forEach((imagem: ImagemProduto) => {
             if (imagem instanceof File) {
@@ -149,7 +162,7 @@ export default function MeusProdutos() {
                 setImagensRemovidas((prevRemovidas) => [...prevRemovidas, imagemRemovida.id]);
             }
             const novasImagens = prev.imagens.filter((_: ImagemProduto, idx: number) => idx !== i);
-            
+
             return {
                 ...prev,
                 imagens: [...novasImagens]
@@ -176,17 +189,19 @@ export default function MeusProdutos() {
         setProdutoEditado((prev: any) => ({ ...prev, [campo]: valor }));
     };
 
+    const getImagemId = (img: ImagemProduto, index: number) => {
+        if (img instanceof File) return `file-${index}`;
+        return String(img.id);
+    };
+
     const handleReordenar = (event: any) => {
         const { active, over } = event;
         if (active.id !== over?.id) {
-            const getImagemId = (img: ImagemProduto) =>
-                img instanceof File ? URL.createObjectURL(img) : img.url;
-
             const oldIndex = produtoEditado.imagens.findIndex(
-                (img: ImagemProduto) => getImagemId(img) === active.id
+                (img: ImagemProduto, i: number) => getImagemId(img, i) === active.id
             );
             const newIndex = produtoEditado.imagens.findIndex(
-                (img: ImagemProduto) => getImagemId(img) === over.id
+                (img: ImagemProduto, i: number) => getImagemId(img, i) === over.id
             );
 
             setProdutoEditado((prev: any) => ({
@@ -205,7 +220,9 @@ export default function MeusProdutos() {
                         {editandoIndex === index ? (
                             <>
                                 <DndContext sensors={sensores} collisionDetection={closestCenter} onDragEnd={handleReordenar}>
-                                    <SortableContext items={produtoEditado.imagens} strategy={rectSortingStrategy}>
+                                    <SortableContext items={produtoEditado.imagens.map((img: ImagemProduto, i: number) =>
+                                        getImagemId(img, i)
+                                    )} strategy={rectSortingStrategy}>
                                         <div className="grid grid-cols-6 gap-2">
                                             {produtoEditado.imagens.map((img: ImagemProduto, i: number) => {
                                                 const src =
@@ -215,8 +232,8 @@ export default function MeusProdutos() {
 
                                                 return (
                                                     <SortableImage
-                                                        key={src}
-                                                        id={src}
+                                                        key={getImagemId(img, i)}
+                                                        id={getImagemId(img, i)}
                                                         src={src}
                                                         onRemove={() => handleExcluirImagem(i)}
                                                     />);

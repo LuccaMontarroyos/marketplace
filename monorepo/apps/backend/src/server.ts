@@ -399,13 +399,18 @@ app.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (req
       tipo: tipoProduto.toUpperCase()
     };
 
+    const ordens = req.body.ordens || [];
+    const ordensArray = Array.isArray(ordens) ? ordens : [ordens];
+
     if (arquivos && arquivos.length > 0) {
       dataProduto.imagens = {
-        create: arquivos.map((file) => ({
-          url: `/uploads/${file.filename}` // Aqui você define a URL como quiser
+        create: arquivos.map((file, index) => ({
+          url: `/uploads/${file.filename}`,
+          ordem: parseInt(ordensArray[index]) || index + 1 // fallback para index
         }))
       };
     }
+
 
     const produto = await prisma.produto.create({
       data: dataProduto,
@@ -480,7 +485,11 @@ app.get('/produtos', async (req: Request, res: Response) => {
         tipo: tipoFiltrado,
       },
       include: {
-        imagens: true
+        imagens: {
+          orderBy: {
+            ordem: 'asc'
+          }
+        }
       }
     });
 
@@ -503,7 +512,11 @@ app.get('/produtos/:id', async (req: Request, res: Response) => {
         id
       },
       include: {
-        imagens: true
+        imagens: {
+          orderBy: {
+            ordem: 'asc'
+          }
+        }
       }
     })
 
@@ -546,6 +559,14 @@ app.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), async (
 
     const precoDecimal = preco ? new Decimal(preco) : produtoExiste.preco;
 
+    const imagensOrdem = req.body.imagensOrdem ? JSON.parse(req.body.imagensOrdem) : [];
+
+    for (const img of imagensOrdem) {
+      await prisma.imagemProduto.update({
+        where: { id: img.id },
+        data: { ordem: img.ordem },
+      });
+    }
 
     const dataUpdate: any = {
       nome: nome || produtoExiste.nome,
@@ -579,9 +600,17 @@ app.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), async (
 
     if (arquivos && arquivos.length > 0) {
 
+      const ultimaOrdem = await prisma.imagemProduto.aggregate({
+        where: { produtoId: id },
+        _max: { ordem: true }
+      });
+
+      const ordemInicial = ultimaOrdem._max.ordem ?? 0;
+
       dataUpdate.imagens = {
-        create: arquivos.slice(0, 6).map(file => ({
-          url: `/uploads/${file.filename}`
+        create: arquivos.slice(0, 6).map((file, index) => ({
+          url: `/uploads/${file.filename}`,
+          ordem: ordemInicial + index + 1
         }))
       };
     }

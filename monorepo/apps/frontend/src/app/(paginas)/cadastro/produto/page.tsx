@@ -7,7 +7,7 @@ import { cadastroProdutoSchema } from "../../../../../../../packages/shared/sche
 import { useState } from "react";
 import z from "zod";
 import { cadastrarProduto } from "@/services/produto";
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 enum TipoProduto {
@@ -27,7 +27,7 @@ export interface CadastroProdutoProps {
     qtdEstoque: number;
     idVendedor: number;
     tipo: TipoProduto;
-}       
+}
 
 export default function CadastroProduto() {
     const router = useRouter();
@@ -65,9 +65,11 @@ export default function CadastroProduto() {
             form.append("qtdEstoque", formData.qtdEstoque.toString());
             form.append("tipoProduto", formData.tipo);
 
-            imagens.slice(0, 6).forEach((file) => {
+            imagens.slice(0, 6).forEach((file, index) => {
                 form.append("imagens", file);
+                form.append("ordens", (index + 1).toString());
             });
+
 
             await cadastrarProduto(form);
             toast.success("Produto criado com sucesso!");

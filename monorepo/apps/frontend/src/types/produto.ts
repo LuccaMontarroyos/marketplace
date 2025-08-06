@@ -13,10 +13,12 @@ export interface Produto {
 
 export interface CadastroDeProduto {
     nome: string;
-    preco: string;
+    preco: number;
     qtdEstoque: number;
     idVendedor: number;
     imagens: File[];
     descricao: string;
     tipo: TipoProduto;
 }
+
+export type ImagemProduto = File | { id?: number; url: string; produtoId?: number };

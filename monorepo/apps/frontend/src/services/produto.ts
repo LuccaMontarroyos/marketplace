@@ -2,7 +2,7 @@ import { obterToken } from "@/utils/token";
 import api from "./api";
 import { Produto } from "@/types/Produto";
 
-export async function buscarProdutosDoUsuario ():Promise<Produto[]> {
+export async function buscarProdutosDoUsuario(): Promise<Produto[]> {
     const token = obterToken();
     const resposta = await api.get<Produto[]>("/produtos/usuario", {
         headers: {
@@ -32,6 +32,18 @@ export async function atualizarProduto(formData: FormData, id: number) {
             "Content-Type": "multipart/form-data"
         }
     });
+
+    return resposta.data;
+}
+
+export async function excluirProduto(id: number) {
+    const token = obterToken();
+    const resposta = await api.delete(`produtos/${id}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+        }
+    })
 
     return resposta.data;
 }

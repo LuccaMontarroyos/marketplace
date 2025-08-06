@@ -6,8 +6,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { produtoSchema } from "../../../../../../../packages/shared/schemas/produto";
-import { Produto } from "@/types/Produto";
-import { buscarProdutosDoUsuario } from '@/services/produto';
+import { ImagemProduto, Produto } from "@/types/Produto";
+import { atualizarProduto, buscarProdutosDoUsuario, excluirProduto } from '@/services/produto';
 
 // Componente individual da imagem com suporte a drag
 function SortableImage({
@@ -48,6 +48,15 @@ function SortableImage({
 }
 
 export default function MeusProdutos() {
+    enum TipoProduto {
+        ELETRONICOS = "Eletrônicos",
+        MOVEIS = "Móveis",
+        ROUPA = "Roupas",
+        CALCADOS = "Calçados",
+        LIVRO = "Livros",
+        AUTOMOVEIS = "Automóveis",
+        OUTROS = "Outros"
+    }
     const [produtos, setProdutos] = useState<Produto[]>();
 
     const buscarProdutos = async (): Promise<Produto[]> => {
@@ -57,6 +66,7 @@ export default function MeusProdutos() {
         return produtosEncontrados;
     }
 
+    const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
     useEffect(() => {
         buscarProdutos();
@@ -77,17 +87,16 @@ export default function MeusProdutos() {
         }
     };
 
-    const handleExcluirProduto = (index: number) => {
+    const handleExcluirProduto = async (index: number) => {
         if (produtos) {
+            await excluirProduto(produtoEditado.id);
             const novos = [...produtos];
             novos.splice(index, 1);
             setProdutos(novos);
         }
     };
 
-    const handleSalvar = (index: number) => {
-
-        console.log("Produto sendo salvo:", produtoEditado);
+    const handleSalvar = async (index: number) => {
 
         const parsed = produtoSchema.safeParse(produtoEditado);
 
@@ -97,18 +106,37 @@ export default function MeusProdutos() {
             setErrosValidacao(erros);
             return;
         }
-        if (produtos) {
-            const novos = [...produtos];
-            novos[index] = produtoEditado;
+
+        const formData = new FormData();
+
+        formData.append("nome", produtoEditado.nome);
+        formData.append("descricao", produtoEditado.descricao);
+        formData.append("preco", String(parseFloat(produtoEditado.preco)));
+        formData.append("qtdEstoque", String(parseInt(produtoEditado.qtdEstoque)));
+        formData.append("tipo", produtoEditado.tipo);
+
+
+        produtoEditado.imagens.forEach((imagem: ImagemProduto) => {
+            if (imagem instanceof File) {
+                formData.append("imagens", imagem);
+            }
+        });
+
+        try {
+            const produtoSalvo = await atualizarProduto(formData, produtoEditado.id);
+            const novos = [...produtos!];
+            novos[index] = produtoSalvo.produto;
             setProdutos(novos);
             setEditandoIndex(null);
             setErrosValidacao({});
+        } catch (error) {
+            console.error("Erro ao atualizar produto", error);
         }
     };
 
     const handleExcluirImagem = (i: number) => {
         setProdutoEditado((prev: any) => {
-            const novasImagens = prev.imagens.filter((_: string, idx: number) => idx !== i);
+            const novasImagens = prev.imagens.filter((_: ImagemProduto, idx: number) => idx !== i);
             return {
                 ...prev,
                 imagens: [...novasImagens]
@@ -118,7 +146,7 @@ export default function MeusProdutos() {
 
     const handleAdicionarImagens = (files: FileList | null) => {
         if (!files) return;
-        const novas = Array.from(files).map((file) => URL.createObjectURL(file));
+        const novas = Array.from(files);
         setProdutoEditado((prev: any) => ({
             ...prev,
             imagens: [...prev.imagens, ...novas].slice(0, 6), // max 6 imagens
@@ -132,8 +160,16 @@ export default function MeusProdutos() {
     const handleReordenar = (event: any) => {
         const { active, over } = event;
         if (active.id !== over?.id) {
-            const oldIndex = produtoEditado.imagens.findIndex((img: string) => img === active.id);
-            const newIndex = produtoEditado.imagens.findIndex((img: string) => img === over.id);
+            const getImagemId = (img: ImagemProduto) =>
+                img instanceof File ? URL.createObjectURL(img) : img.url;
+
+            const oldIndex = produtoEditado.imagens.findIndex(
+                (img: ImagemProduto) => getImagemId(img) === active.id
+            );
+            const newIndex = produtoEditado.imagens.findIndex(
+                (img: ImagemProduto) => getImagemId(img) === over.id
+            );
+
             setProdutoEditado((prev: any) => ({
                 ...prev,
                 imagens: arrayMove(prev.imagens, oldIndex, newIndex),
@@ -152,14 +188,21 @@ export default function MeusProdutos() {
                                 <DndContext sensors={sensores} collisionDetection={closestCenter} onDragEnd={handleReordenar}>
                                     <SortableContext items={produtoEditado.imagens} strategy={rectSortingStrategy}>
                                         <div className="grid grid-cols-6 gap-2">
-                                            {produtoEditado.imagens.map((img: string, i: number) => (
-                                                <SortableImage
-                                                    key={img}
-                                                    id={img}
-                                                    src={img}
-                                                    onRemove={() => handleExcluirImagem(i)}
-                                                />
-                                            ))}
+                                            {produtoEditado.imagens.map((img: ImagemProduto, i: number) => {
+                                                const src =
+                                                    img instanceof File
+                                                        ? URL.createObjectURL(img)
+                                                        : img.url;
+
+                                                return (
+                                                    <SortableImage
+                                                        key={src}
+                                                        id={src}
+                                                        src={src}
+                                                        onRemove={() => handleExcluirImagem(i)}
+                                                    />);
+                                            }
+                                            )}
                                             {produtoEditado.imagens.length < 6 &&
                                                 Array.from({ length: 6 - produtoEditado.imagens.length }).map((_, i) => (
                                                     <label
@@ -217,6 +260,18 @@ export default function MeusProdutos() {
                                         <p className="text-red-500 text-sm mt-1">{errosValidacao.qtdEstoque[0]}</p>
                                     )}
                                 </div>
+                                <select
+                                    value={produtoEditado?.tipo || ''}
+                                    onChange={(e) => handleChangeCampo('tipo', e.target.value)}
+                                    className="border px-3 py-2 w-full mt-2"
+                                >
+                                    <option value="" disabled>Selecione o tipo</option>
+                                    {Object.entries(TipoProduto).map(([key, label]) => (
+                                        <option key={key} value={label}>
+                                            {label}
+                                        </option>
+                                    ))}
+                                </select>
 
                                 <div className="flex justify-end gap-3 pt-4">
                                     <button
@@ -230,13 +285,18 @@ export default function MeusProdutos() {
                         ) : (
                             <>
                                 <div className="grid grid-cols-6 gap-2">
-                                    {produto.imagens.map((img, i) => (
-                                        <img
-                                            key={i}
-                                            src={img}
-                                            className="aspect-square object-cover w-full rounded"
-                                        />
-                                    ))}
+                                    {produto.imagens.map((img, i) => {
+                                        return (
+
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                key={i}
+                                                src={img.url.startsWith('/') ? `${baseURL}${img.url}` : img.url}
+                                                alt={`Imagem do produto ${produto.nome}`}
+                                                className="aspect-square object-cover w-full rounded"
+                                            />
+                                        )
+                                    })}
                                     {Array.from({ length: 6 - produto.imagens.length }).map((_, i) => (
                                         <div
                                             key={`vazio-${i}`}

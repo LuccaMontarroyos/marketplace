@@ -78,6 +78,7 @@ model Produto {
 model ImagemProduto {
   id        Int     @id @default(autoincrement())
   url       String
+  ordem     Int
   produto   Produto @relation(fields: [produtoId], references: [id])
   produtoId Int
 

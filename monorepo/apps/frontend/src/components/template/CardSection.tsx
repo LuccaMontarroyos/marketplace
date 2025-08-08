@@ -7,8 +7,7 @@ export default function CardSection({ filtros }: { filtros?: FiltrosProduto }) {
     const [produtos, setProdutos] = useState<Produto[]>([]);
 
     const buscarOsProdutos = async () => {
-        const produtosEncontrados = await buscarProdutos();
-        console.log(produtosEncontrados);
+        const produtosEncontrados = await buscarProdutos(filtros);
         setProdutos(produtosEncontrados);
     }
 
@@ -17,11 +16,10 @@ export default function CardSection({ filtros }: { filtros?: FiltrosProduto }) {
     }, [JSON.stringify(filtros)])
 
     return (
-        <div className="p-10">
-            {produtos.map((produto) => {
-                return <Card key={produto.id} idProduto={produto.id} nome={produto.nome} descricao={produto.descricao} idVendedor={produto.idVendedor}/>
-            })}
-            <Card idProduto={1} />
+        <div className="p-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {produtos.map((produto) => (
+                <Card key={produto.id} idProduto={produto.id} nome={produto.nome} descricao={produto.descricao} idVendedor={produto.idVendedor}/>
+            ))}
         </div>
     )
 };

@@ -55,7 +55,7 @@ export async function buscarProdutos(filtros?: FiltrosProduto) {
         if (filtros.nome) params.append("nome", filtros.nome);
         if (filtros.precoMin !== undefined) params.append("precoMin", String(filtros.precoMin));
         if (filtros.precoMax !== undefined) params.append("precoMax", String(filtros.precoMax));
-        // if (filtros.tipo) params.append("tipo", filtros.tipo);
+        if (filtros.tipo) params.append("tipo", filtros.tipo);
     }
     const resposta = await api.get<Produto[]>(`/produtos?${params.toString()}`, {
         headers: {

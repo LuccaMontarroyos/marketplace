@@ -8,8 +8,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { produtoSchema } from "../../../../../../../packages/shared/schemas/produto";
 import { ImagemProduto, Produto } from "@/types/Produto";
 import { atualizarProduto, buscarProdutosDoUsuario, excluirProduto } from '@/services/produto';
+import InputPreco from '@/components/template/InputPreco';
 
-// Componente individual da imagem com suporte a drag
+
 function SortableImage({
     id,
     src,
@@ -77,7 +78,8 @@ export default function MeusProdutos() {
     const [produtoEditado, setProdutoEditado] = useState<any>(null);
     const [errosValidacao, setErrosValidacao] = useState<Record<string, string[]>>({});
     const [imagensRemovidas, setImagensRemovidas] = useState<number[]>([]);
-
+    const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
+    const [produtoParaExcluir, setProdutoParaExcluir] = useState<number | null>(null);
 
     const sensores = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
 
@@ -96,6 +98,7 @@ export default function MeusProdutos() {
             const novos = [...produtos];
             novos.splice(index, 1);
             setProdutos(novos);
+            setMostrarConfirmacao(false);
         }
     };
 
@@ -267,27 +270,22 @@ export default function MeusProdutos() {
                                     <p className="text-red-500 text-sm mt-1">{errosValidacao.nome[0]}</p>
                                 )}
                                 <textarea
-                                    className="border px-3 py-2 w-full mt-2"
+                                    className="border px-3 py-2 w-full mt-2 resize-none"
+                                    placeholder='Descrição do produto'
                                     value={produtoEditado.descricao}
                                     onChange={(e) => handleChangeCampo('descricao', e.target.value)}
                                 />
                                 {errosValidacao.descricao && (
                                     <p className="text-red-500 text-sm mt-1">{errosValidacao.descricao[0]}</p>
                                 )}
-                                <div className="flex gap-4 mt-2">
-                                    <input
-                                        type="number"
-                                        className="border px-3 py-2 w-1/2"
-                                        value={produtoEditado.preco}
-                                        onChange={(e) => handleChangeCampo('preco', parseFloat(e.target.value))}
-                                        placeholder="Preço"
-                                    />
+                                <div className="flex mt-2 justify-between">
+                                    <InputPreco className="w-2/3 border px-3 py-2" onChange={(val) => handleChangeCampo('preco', val)} value={produtoEditado.preco} />
                                     {errosValidacao.preco && (
                                         <p className="text-red-500 text-sm mt-1">{errosValidacao.preco[0]}</p>
                                     )}
                                     <input
                                         type="number"
-                                        className="border px-3 py-2 w-1/2"
+                                        className="border px-3 py-2 w-2/3"
                                         value={produtoEditado.qtdEstoque}
                                         onChange={(e) => handleChangeCampo('qtdEstoque', parseInt(e.target.value))}
                                         placeholder="Qtd Estoque"
@@ -353,7 +351,7 @@ export default function MeusProdutos() {
                                         Editar
                                     </button>
                                     <button
-                                        onClick={() => handleExcluirProduto(index)}
+                                        onClick={() => {setMostrarConfirmacao(true); setProdutoParaExcluir(index);}}
                                         className='px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 text-white'>
                                         Excluir
                                     </button>
@@ -361,8 +359,38 @@ export default function MeusProdutos() {
                             </>
                         )}
                     </div>
+
                 ))}
             </div>
+            {mostrarConfirmacao && (
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded shadow-md max-w-sm w-full">
+                        <h2 className="text-lg font-semibold mb-4">Tem certeza que deseja excluir?</h2>
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                onClick={() => {
+                                    setMostrarConfirmacao(false);
+                                    setProdutoParaExcluir(null);
+                                }}
+                                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-4 py-2 rounded"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (produtoParaExcluir !== null) {
+                                        handleExcluirProduto(produtoParaExcluir);
+                                    }
+                                }}
+                                className="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded"
+                            >
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

@@ -4,9 +4,10 @@ import { NumericFormat } from "react-number-format";
 export interface InputPrecoProps {
     value: number;
     onChange: (value: number) => void;
+    className: string;
 }
 
-export default function InputPreco({ value, onChange }: InputPrecoProps) {
+export default function InputPreco({ value, onChange, className }: InputPrecoProps) {
     return (
         <div className="w-full">
             <NumericFormat
@@ -21,7 +22,7 @@ export default function InputPreco({ value, onChange }: InputPrecoProps) {
                 decimalScale={2}
                 fixedDecimalScale
                 allowNegative={false}
-                className="w-9/11 bg-white border-2 border-gray-400 rounded-xl px-4 py-2 "
+                className={className}
                 placeholder="R$ "
             />
         </div>

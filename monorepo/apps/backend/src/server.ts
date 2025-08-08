@@ -427,42 +427,6 @@ app.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (req
 });
 
 
-// app.post('/produtos', usuarioAutenticado, async (req: Request, res: Response) => {
-//   try {
-//     const { nome, descricao, preco, qtdEstoque, imagens, tipoProduto } = req.body;
-//     const idVendedor = (req as any).usuario?.id;
-
-//     const dataProduto: any = {
-//       nome,
-//       descricao,
-//       qtdEstoque,
-//       preco,
-//       idVendedor,
-//       tipo: tipoProduto.toUpperCase()
-//     }
-
-//     if (imagens && Array.isArray(imagens) && imagens.length > 0) {
-//       dataProduto.imagens = {
-//         create: imagens.slice(0, 6).map((url: string) => ({
-//           urlImagem: url
-//         }))
-//       };
-//     }
-
-//     const produto = await prisma.produto.create({
-//       data: dataProduto,
-//       include: {
-//         imagens: true
-//       }
-//     });
-
-//     return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto })
-//   } catch (error) {
-//     return res.status(500).json({ message: `Erro ao cadastrar produto: ${error instanceof Error ? error.message : error}` });
-//   }
-
-// })
-
 app.get('/produtos', async (req: Request, res: Response) => {
   try {
     const { nome, precoMin, precoMax, tipo } = req.query
@@ -493,7 +457,7 @@ app.get('/produtos', async (req: Request, res: Response) => {
       }
     });
 
-    res.status(200).json({ produtos });
+    res.status(200).json(produtos);
 
   } catch (error) {
     return res.status(500).json({ message: `Erro ao listar produtos: ${error instanceof Error ? error.message : error}` });

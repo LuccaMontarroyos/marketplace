@@ -22,3 +22,10 @@ export interface CadastroDeProduto {
 }
 
 export type ImagemProduto = File | { id?: number; url: string; produtoId?: number };
+
+export type FiltrosProduto = {
+    nome? : string;
+    precoMin? : number;
+    precoMax?: number;
+    tipo?: string;
+}

@@ -37,6 +37,7 @@ export const cadastroProdutoSchema = z.object({
             message: "Estoque mínimo de 1 unidade"
         }),
     tipo: z.enum([
+        "",
         "ELETRONICOS",
         "MOVEIS",
         "ROUPA",
@@ -44,5 +45,7 @@ export const cadastroProdutoSchema = z.object({
         "LIVRO",
         "AUTOMOVEIS",
         "OUTROS"
-    ], { required_error: "Selecione uma categoria para o produto" }),
+    ]).refine((val) => val !== "", {
+        message: "Selecione uma categoria válida",
+    }),
 })

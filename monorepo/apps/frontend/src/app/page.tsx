@@ -9,13 +9,18 @@ import CarrinhoDrawer from "@/components/template/CarrinhoDrawer";
 
 export default function Home() {
     const [carrinhoAberto, setCarrinhoAberto] = useState(false);
+    const [filtros, setFiltros] = useState<{ nome?: string }>({});
+
+    const handleBuscarProdutos = (nome: string) => {
+        setFiltros({ nome });
+    };
 
     return (
         <div>
-            <Cabecalho onToggleCarrinho={() => setCarrinhoAberto(!carrinhoAberto)} />
+            <Cabecalho onBuscarProdutos={handleBuscarProdutos} onToggleCarrinho={() => setCarrinhoAberto(!carrinhoAberto)} />
             <main className="bg-white vh-100">
                 <BannerCarousel />
-                <CardSection/>
+                <CardSection filtros={filtros}/>
             </main>
             <CarrinhoDrawer aberto={carrinhoAberto} onFechar={() => setCarrinhoAberto(false)} />
             <Rodape />

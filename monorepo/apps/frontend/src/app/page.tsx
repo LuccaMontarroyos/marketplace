@@ -13,7 +13,12 @@ export default function Home() {
     const [carrinhoAberto, setCarrinhoAberto] = useState(false);
     const [filtros, setFiltros] = useState<FiltrosProduto>({});
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
+    const [refreshCarrinho, setRefreshCarrinho] = useState(false);
 
+    const atualizarCarrinhoLocal = () => {
+        setRefreshCarrinho(prev => !prev);
+        setCarrinhoAberto(true);  // alterna entre true/false para forçar refresh
+    };
 
     const handleBuscarProdutos = (nome: string) => {
         setFiltros((prev) => ({ ...prev, nome: nome || undefined }));
@@ -22,6 +27,10 @@ export default function Home() {
     const handleFiltrarProdutos = (novosFiltros: FiltrosProduto) => {
         setFiltros((prev) => ({ ...prev, ...novosFiltros }));
     };
+
+    // const abrirCarrinho = () => {
+    //     setCarrinhoAberto(true);
+    // }
 
     return (
         <div>
@@ -40,10 +49,10 @@ export default function Home() {
                 )}
                 <div className="flex-1">
                     <BannerCarousel />
-                    <CardSection filtros={filtros} />
+                    <CardSection onAddCarrinho={atualizarCarrinhoLocal} filtros={filtros} />
                 </div>
             </main>
-            <CarrinhoDrawer aberto={carrinhoAberto} onFechar={() => setCarrinhoAberto(false)} />
+            <CarrinhoDrawer aberto={carrinhoAberto} onFechar={() => setCarrinhoAberto(false)} refresh={refreshCarrinho} />
             <Rodape />
         </div>
     )

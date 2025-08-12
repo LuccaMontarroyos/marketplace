@@ -29,12 +29,12 @@ export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => v
                 <nav className="flex gap-20 text-md">
                     <NavBarItem link={"/cadastro/produto"} texto={"Cadastrar produto"} />
                     <NavBarItem onClick={() => {logout();router.push("/login");}} texto={"Refazer pedido"} />
-                    <CarrinhoItem onClick={onToggleCarrinho} link="" icone={IconShoppingCart} />
+                    <CarrinhoItem onClick={onToggleCarrinho} icone={IconShoppingCart} />
                     <NavBarItem link={"/perfil"} texto={"Perfil"} />
                 </nav>
             ) : (
                 <nav className="flex gap-20 text-md">
-                    <CarrinhoItem onClick={onToggleCarrinho} link="" icone={IconShoppingCart} />
+                    <CarrinhoItem onClick={onToggleCarrinho} icone={IconShoppingCart} />
                     <NavBarItem onClick={irParaLogin} texto={"Login"} />
                     <NavBarItem onClick={irParaCadastro} texto={"Cadastro"} />
                 </nav>

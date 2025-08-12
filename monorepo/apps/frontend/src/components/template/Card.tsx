@@ -1,5 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { IconShoppingCartPlus } from "@tabler/icons-react";
+import { adicionarAoCarrinho } from "@/services/carrinho";
+import { toast } from "react-toastify";
 
 export interface CardProps {
   idProduto: number;
@@ -8,9 +11,23 @@ export interface CardProps {
   idVendedor?: number;
   preco?: number;
   descricao?: string;
+  onAddCarrinho?: () => void;
 }
 
-export default function Card({nome, idProduto, imagem, descricao, preco}: CardProps) {
+export default function Card({ nome, idProduto, imagem, descricao, preco, onAddCarrinho }: CardProps) {
+
+  const handleAddShoppingCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    try {
+      await adicionarAoCarrinho(idProduto, 1);
+      if(onAddCarrinho) onAddCarrinho();
+    } catch (error) {
+      console.error("Erro ao atualizar carrinho: ", error);
+      toast.error("Erro ao atualizar carrinho");
+    }
+  } 
+
   return (
     <Link href={idProduto ? `/produto/${idProduto}` : '/produto/1'}>
       <div className="bg-white shadow-md rounded-2xl overflow-hidden w-64 flex flex-col hover:shadow-xl transition-all duration-300">
@@ -28,9 +45,12 @@ export default function Card({nome, idProduto, imagem, descricao, preco}: CardPr
           <p className="text-sm text-gray-500 line-clamp-2">
             {descricao ?? "Produto de descrição genérica para exibição."}
           </p>
-          <p className="text-md font-bold text-black">
-            R$ {preco ?? "19.99"}
-          </p>
+          <div className="flex w-full justify-between">
+            <p className="text-md font-bold text-black">
+              R$ {Number(preco).toFixed(2) ?? "0.00"}
+            </p>
+            <button onClick={handleAddShoppingCart} className="rounded-full bg-verde p-2"><IconShoppingCartPlus size={20} /></button>
+          </div>
         </div>
       </div>
     </Link>

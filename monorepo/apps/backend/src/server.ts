@@ -13,6 +13,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { Decimal } from '@prisma/client/runtime/library';
+import { v4 as uuidv4 } from "uuid";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -37,12 +39,15 @@ const app = express();
 const port = 5000;
 
 app.use(cors({
-  origin: '*',
+  origin: 'http://localhost:3000',
+  credentials: true
 }))
 
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/uploads', express.static(uploadDir));
+
+app.use(cookieParser());
 
 cron.schedule("0 * * * *", async () => {
   console.log("Removendo itens expirados do carrinho...");
@@ -79,10 +84,19 @@ const usuarioAutenticado = (req: Request, res: Response, next: NextFunction) => 
 };
 
 const usuarioAutenticadoOpcional = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+  let token: string | undefined;
 
+  const authHeader = req.headers.authorization;
   if (authHeader) {
-    const token = authHeader.split(" ")[1];
+    token = authHeader.split(" ")[1];
+  }
+
+  if (!token && req.cookies.token) {
+    token = req.cookies.token;
+  }
+
+
+  if (token) {
 
     try {
       const decoded = jwt.verify(token, SECRET_KEY) as { id: number; email: string; isAdmin: boolean };
@@ -1138,8 +1152,26 @@ app.delete('/avaliacoes/:id', usuarioAutenticado, async (req: Request, res: Resp
   }
 })
 
-app.post("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
-  const { idProduto, quantidade, sessionId } = req.body;
+
+function garantirSessionId(req, res, next) {
+  let sessionId = req.cookies.sessionId;
+  if (!sessionId) {
+    sessionId = uuidv4();
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+  }
+  req.sessionId = sessionId;
+  next();
+}
+
+
+app.post("/carrinho", usuarioAutenticadoOpcional, garantirSessionId, async (req, res) => {
+  const { idProduto, quantidade } = req.body;
+  const sessionId = req.sessionId;
 
   try {
 
@@ -1201,32 +1233,59 @@ app.post("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
 });
 
 
-app.patch("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
-  const { idProduto, quantidade, sessionId } = req.body;
+app.patch("/carrinho", usuarioAutenticadoOpcional, garantirSessionId, async (req, res) => {
+  const { idProduto, quantidade } = req.body;
+  const idUsuario = (req as any).usuario?.id;
+  const sessionId = req.sessionId;
 
+  if (typeof idProduto !== "number" || typeof quantidade !== "number") {
+    return res.status(400).json({ message: "idProduto e quantidade devem ser números" });
+  }
+
+  if (quantidade < 0) {
+    return res.status(400).json({ message: "Quantidade inválida" });
+  }
   try {
-    const idUsuario = (req as any).usuario?.id;
-
-    if (quantidade <= 0) {
-      return res.status(400).json({ message: "Quantidade inválida" });
-    }
 
     if (!idUsuario && !sessionId) {
       return res.status(400).json({ message: "Usuário não autenticado e sem sessionId válido" })
     }
 
+    const whereFiltro: any = { idProduto };
+    if (idUsuario) {
+      whereFiltro.idUsuario = idUsuario;
+    } else {
+      whereFiltro.sessionId = sessionId;
+    }
+
+
+
     const carrinhoExistente = await prisma.carrinho.findFirst({
-      where: {
-        idProduto,
-        OR: [
-          { idUsuario: idUsuario || undefined },
-          { sessionId: sessionId || undefined }
-        ]
-      }
-    });
+      where: whereFiltro
+    })
+
+    // const carrinhoExistente = await prisma.carrinho.findFirst({
+    //   where: {
+    //     idProduto,
+    //     OR: [
+    //       { idUsuario: idUsuario || undefined },
+    //       { sessionId: sessionId || undefined }
+    //     ]
+
+    //   }
+    // });
 
     if (!carrinhoExistente) {
       return res.status(404).json({ error: "Item do carrinho não encontrado" });
+    }
+
+    if (quantidade === 0) {
+      await prisma.carrinho.delete({
+        where: {
+          id: carrinhoExistente.id
+        }
+      })
+      return res.json({ message: "Produto removido do carrinho" });
     }
 
     const carrinhoAtualizado = await prisma.carrinho.update({
@@ -1241,28 +1300,43 @@ app.patch("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
 });
 
 
-app.get("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
+app.get("/carrinho", usuarioAutenticadoOpcional, garantirSessionId, async (req, res) => {
 
-  const sessionId = req.query.sessionId as string;
+  let sessionId = req.sessionId;
+
+  const usuario = (req as any).usuario;
+
+  if (!usuario?.id && !sessionId) {
+    sessionId = uuidv4();
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+  }
+  if (!usuario?.id && !sessionId) {
+    return res.status(400).json({ message: "Usuário não autenticado e sem sessionId válido" });
+  }
+
 
   try {
-    const usuario = (req as any).usuario;
-
-    if (!usuario?.id && !sessionId) {
-      return res.status(400).json({ message: "Usuário não autenticado e sem sessionId válido" });
-    }
-
     const agora = new Date();
     const carrinho = await prisma.carrinho.findMany({
       where: {
         OR: [
-          { idUsuario: usuario.id || undefined },
+          { idUsuario: usuario?.id || undefined },
           { sessionId: sessionId || undefined }
         ],
         dataExpiracao: { gt: agora }
       },
       include: {
-        produto: true
+        produto: {
+          include: {
+            imagens: true
+          }
+        },
+        usuario: true
       }
     })
 
@@ -1273,13 +1347,16 @@ app.get("/carrinho", usuarioAutenticadoOpcional, async (req, res) => {
   }
 })
 
-app.delete("/carrinho/:idProduto", usuarioAutenticadoOpcional, async (req, res) => {
+app.delete("/carrinho/:idProduto", usuarioAutenticadoOpcional, garantirSessionId, async (req, res) => {
   const usuario = (req as any).usuario;
-  const { sessionId } = req.body;
+  const sessionId = req.sessionId;
   const idProduto = Number(req.params.idProduto);
   if (isNaN(idProduto)) {
     return res.status(400).json({ message: 'ID inválido' })
   }
+
+  console.log("Esse é o id de usuário: ", usuario);
+  console.log("Esse é o sessionID", sessionId);
 
   if (!usuario?.id && !sessionId) {
     return res.status(400).json({ error: "Usuário não autenticado e sem sessionId válido" });
@@ -1287,14 +1364,19 @@ app.delete("/carrinho/:idProduto", usuarioAutenticadoOpcional, async (req, res) 
 
 
   try {
-    await prisma.carrinho.deleteMany({
-      where: {
-        OR: [
-          { idUsuario: Number(usuario.id) || undefined },
-          { sessionId: sessionId || undefined }
-        ],
-        idProduto: Number(idProduto),
-      },
+
+    const whereFiltro: any = { idProduto };
+    if (usuario?.id) whereFiltro.idUsuario = Number(usuario.id);
+    else if (sessionId) whereFiltro.sessionId = sessionId;
+    else return res.status(400).json({ error: "Usuário não autenticado e sem sessionId válido" });
+
+    const itemCarrinho = await prisma.carrinho.findFirst({ where: whereFiltro });
+    if (!itemCarrinho) {
+      return res.status(404).json({ message: "Item do carrinho não encontrado" });
+    }
+
+    await prisma.carrinho.delete({
+      where: { id: itemCarrinho.id }
     });
 
     res.json({ message: "Produto removido do carrinho" });

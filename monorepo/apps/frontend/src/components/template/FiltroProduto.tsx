@@ -29,7 +29,7 @@ export default function FiltroProduto({ onFiltrar, filtrosAtuais }: FiltroProdut
     }
 
     return (
-        <div className="bg-white shadow-md p-4 rounded-md flex flex-col gap-3 max-w-xs">
+        <div className="bg-white texto-verde shadow-md p-4 rounded-md flex flex-col gap-3 max-w-xs">
             <h2 className="font-bold text-lg">Filtros</h2>
 
             <input

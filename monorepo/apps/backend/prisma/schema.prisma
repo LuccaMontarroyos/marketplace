@@ -29,6 +29,7 @@ model Usuario {
   senha              String
   fotoPerfil         String?
   isAdmin            Boolean     @default(false)
+  stripeAccountId    String?
   createdAt          DateTime    @default(now())
   produtos           Produto[]
   pedidos            Pedido[]
@@ -97,8 +98,8 @@ model Pedido {
   enderecoEntrega     Endereco        @relation(fields: [idEnderecoEntrega], references: [id])
   Pagamento           Pagamento[]
   PedidoProduto       PedidoProduto[]
+  createdAt           DateTime        @default(now())
 
-  @@unique([sessionId], map: "unique_sessionId_pedido")
   @@map("pedidos")
 }
 

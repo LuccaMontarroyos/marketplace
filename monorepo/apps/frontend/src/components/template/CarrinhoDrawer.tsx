@@ -3,6 +3,7 @@ import { atualizarCarrinho, buscarProdutosDoCarrinho, removerProdutoDoCarrinho }
 import { ItemCarrinho } from '@/types/Carrinho';
 import { IconXboxX } from '@tabler/icons-react';
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface CarrinhoDrawerProps {
@@ -15,6 +16,8 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
 
   const [itens, setItens] = useState<ItemCarrinho[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
   
   const buscarProdutos = async () => {
     setLoading(true);
@@ -48,8 +51,7 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
     }
   };
 
-  // const total = itens.reduce((acc, item) => acc + item.precoAtual * item.quantidade, 0);
-  const total = 100;
+  const total = itens.reduce((acc, item) => acc + Number(item.precoAtual) * item.quantidade, 0);
 
   useEffect(() => {
     if (aberto) {
@@ -134,7 +136,7 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
             <p>TOTAL</p>
             <strong>R$ {total.toFixed(2)}</strong>
           </div>
-          <button className="botao-verde w-full" disabled={itens.length === 0}>
+          <button onClick={()=> router.push("/pedido")} className="botao-verde w-full" disabled={itens.length === 0}>
             Confirmar
           </button>
         </div>

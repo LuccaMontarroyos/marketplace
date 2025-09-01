@@ -8,14 +8,14 @@ export default function PagamentoCancelado() {
   const pedidoId = searchParams.get("pedidoId");
 
   return (
-    <div className="flex flex-col items-center p-6">
-      <h1 className="text-2xl font-bold text-red-600">
-        ❌ Pagamento cancelado
+    <div className="flex flex-col items-center p-6 h-screen bg-white texto-azul">
+      <h1 className="text-2xl font-bold">
+        ✖️ Pagamento cancelado
       </h1>
       <p className="mt-2">
         Seu pedido {pedidoId ? `#${pedidoId}` : ""} não foi concluído.
       </p>
-      <Link href="/carrinho" className="mt-6 text-blue-600 underline">
+      <Link href="/" className="mt-6 texto-verde underline">
         Voltar para o carrinho
       </Link>
     </div>

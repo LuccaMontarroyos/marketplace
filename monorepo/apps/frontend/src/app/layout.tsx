@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Montserrat } from "next/font/google";
 import { ClientProviders } from "./ClientProviders";
+import StripeRedirectHandler from "@/context/StripeContext";
 
 export const metadata: Metadata = {
   title: "LB Marketplace",
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${font.className}`}>
         <ClientProviders>
+          <StripeRedirectHandler />
           {children}
         </ClientProviders>
       </body>

@@ -8,9 +8,7 @@ import express from 'express';
 
 const prisma = new PrismaClient();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-07-30.basil"
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 const router = Router();
 
@@ -39,6 +37,7 @@ router.post("/account", usuarioAutenticado, async (req: Request, res: Response) 
       country: "BR", // Brasil
       email: usuario.email,
       capabilities: {
+        card_payments: { requested: true },
         transfers: { requested: true }
       }
     });
@@ -46,13 +45,13 @@ router.post("/account", usuarioAutenticado, async (req: Request, res: Response) 
     // Salvar ID no banco
     await prisma.usuario.update({
       where: { id: usuarioId },
-      data: { stripeAccountId: account.id }
+      data: { stripeAccountId: account.id, isVendedor: true }
     });
 
     return res.json({ mensagem: "Conta criada com sucesso.", stripeAccountId: account.id });
   } catch (erro) {
     console.error(erro);
-    return res.status(500).json({ erro: "Erro ao criar conta no Stripe." });
+    return res.status(500).json({ erro: `Erro ao criar conta no Stripe: ${erro}` });
   }
 });
 

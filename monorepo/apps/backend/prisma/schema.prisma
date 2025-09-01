@@ -29,6 +29,7 @@ model Usuario {
   senha              String
   fotoPerfil         String?
   isAdmin            Boolean     @default(false)
+  isVendedor         Boolean     @default(false)
   stripeAccountId    String?
   createdAt          DateTime    @default(now())
   produtos           Produto[]

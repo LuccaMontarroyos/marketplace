@@ -2,12 +2,16 @@
 import CarrinhoItem from "./CarrinhoItem"
 import NavBarItem from "./NavBarItem"
 import { IconShoppingCart } from "@tabler/icons-react";
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
+import { criarContaStripe, gerarLinkOnBoarding } from "@/services/stripe";
+import { useEffect } from "react";
 
 export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => void }) {
     const { token, logout } = useAuth();
     const router = useRouter();
+    const { usuario } = useAuth();
+    const pathname = usePathname();
 
     const usuarioLogado = !!token;
 
@@ -23,12 +27,45 @@ export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => v
         router.push(`/login?from=${encodeURIComponent(currentPath)}`);
     }
 
+    const handleTornarVendedor = async () => {
+        try {
+            
+            await criarContaStripe().catch((err) => {
+                if (err.response?.data?.erro === "Usuário já possui conta no Stripe.") {
+                    console.log("Conta Stripe já existe, seguimos...");
+                } else {
+                    throw err;
+                }
+            });
+
+            
+            const linkData = await gerarLinkOnBoarding();
+
+            
+            window.location.href = linkData.url;
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao tentar criar conta Stripe");
+        }
+    };
+
+    useEffect(() => {
+        if (pathname === "/stripe/onboarding/sucesso") {
+            router.push("/cadastro/produto");
+        } else if (pathname === "/stripe/onboarding/erro") {
+            alert("Houve um problema no onboarding do Stripe. Tente novamente.");
+            router.push("/perfil"); // ou outra página
+        }
+    }, [pathname]);
+
     return (
         <>
             {usuarioLogado ? (
                 <nav className="flex gap-20 text-md">
-                    <NavBarItem link={"/cadastro/produto"} texto={"Cadastrar produto"} />
-                    <NavBarItem onClick={() => {logout();router.push("/login");}} texto={"Refazer pedido"} />
+                    {
+                        usuario?.isVendedor ? <NavBarItem link={"/cadastro/produto"} texto={"Cadastrar produto"} /> : <NavBarItem onClick={handleTornarVendedor} texto="Me tornar vendedor" />
+                    }
+                    <NavBarItem onClick={() => { logout(); router.push("/login"); }} texto={"Refazer pedido"} />
                     <CarrinhoItem onClick={onToggleCarrinho} icone={IconShoppingCart} />
                     <NavBarItem link={"/perfil"} texto={"Perfil"} />
                 </nav>

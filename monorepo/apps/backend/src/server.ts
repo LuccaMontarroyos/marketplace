@@ -11,8 +11,13 @@ import cookieParser from "cookie-parser";
 import Stripe from 'stripe';
 import stripeRoutes from './routes/stripeRoutes';
 import { usuarioAutenticado, usuarioAutenticadoOpcional, isAdminMiddleware, garantirSessionId } from './middlewares/auth';
-import { limparCarrinhosExpirados } from './routes/cartRoutes';
-import { uploadDir } from './routes/productsRoutes';
+import cartRoutes, { limparCarrinhosExpirados } from './routes/cartRoutes';
+import productsRoutes, { uploadDir } from './routes/productsRoutes';
+import userRoutes from './routes/userRoutes';
+import rateRoutes from './routes/rateRoutes';
+import favoriteRoutes from './routes/favoriteRoutes';
+import addressRoutes from './routes/addressRoutes';
+import messageRoutes from './routes/messageRoutes';
 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
@@ -36,7 +41,14 @@ app.use(cookieParser());
 
 app.use("/stripe", stripeRoutes);
 
-app.use("/usuarios", userRoutes);
+app.use(userRoutes);
+app.use(cartRoutes);
+app.use(rateRoutes);
+app.use(productsRoutes);
+app.use(favoriteRoutes);
+app.use(addressRoutes);
+app.use(messageRoutes);
+
 
 cron.schedule("0 * * * *", async () => {
   console.log("Removendo itens expirados do carrinho...");
@@ -60,11 +72,17 @@ app.post('/pedidos', usuarioAutenticadoOpcional, garantirSessionId, async (req, 
     }
 
     const metodosValidos = ['cartao', 'pix', 'boleto'];
-    if (!metodosValidos.includes(metodoPagamento)) {
+    if (!(metodosValidos.includes(metodoPagamento))) {
       return res.status(400).json({ message: "Método de pagamento inválido" });
     }
 
     // Buscar carrinho
+
+    
+    if (!idEndereco) {
+      return res.status(401).json({ error: "Endereço Inválido"})
+    }
+
     const carrinho = await prisma.carrinho.findMany({
       where: {
         OR: [
@@ -146,7 +164,7 @@ app.post('/pedidos', usuarioAutenticadoOpcional, garantirSessionId, async (req, 
       pagamentoId: pagamento.id,
       valorTotal,
       metodoPagamento,
-      paymentUrl: session.url
+      checkoutUrl: session.url, 
     });
 
   } catch (error: any) {

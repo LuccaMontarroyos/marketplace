@@ -19,25 +19,24 @@ export default function PagamentoSucesso() {
     }
   }, [pedidoId]);
 
-  if (!pedidoId) {
-    return <p>Nenhum pedido informado.</p>;
-  }
+  // if (!pedidoId) {
+  //   return <p>Nenhum pedido informado.</p>;
+  // }
 
   return (
-    <div className="flex flex-col items-center p-6">
-      <h1 className="text-2xl font-bold text-green-600">
+    <div className="flex flex-col items-center p-6 bg-white h-screen">
+      <h1 className="text-2xl font-bold texto-verde">
         🎉 Pagamento confirmado!
       </h1>
       {pedido ? (
-        <div className="mt-4 p-4 border rounded-md bg-gray-50">
+        <div className="mt-4 p-4 border rounded-md bg-gray-50 texto-azul">
           <p><strong>ID do Pedido:</strong> {pedido.id}</p>
           <p><strong>Status:</strong> {pedido.status}</p>
-          <p><strong>Total:</strong> R$ {pedido.total}</p>
         </div>
       ) : (
-        <p>Carregando pedido...</p>
+        <p className="texto-azul">Carregando pedido...</p>
       )}
-      <Link href="/" className="mt-6 text-blue-600 underline">
+      <Link href="/" className="mt-6 texto-verde underline">
         Voltar para a loja
       </Link>
     </div>

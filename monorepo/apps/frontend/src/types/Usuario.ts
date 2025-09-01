@@ -7,6 +7,7 @@
   celular: string;
   fotoPerfil: string;
   isAdmin: boolean;
+  isVendedor: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

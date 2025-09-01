@@ -52,7 +52,7 @@ router.get('/produtos/usuario', usuarioAutenticado, async (req: Request, res: Re
 router.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (req: Request, res: Response) => {
   try {
     const { nome, descricao, preco, qtdEstoque, tipoProduto } = req.body;
-    const idVendedor = (req as any).usuario?.id;
+    const usuario = (req as any).usuario;
 
     const arquivos = req.files as Express.Multer.File[];
 
@@ -63,7 +63,7 @@ router.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (
       descricao,
       qtdEstoque: Number(qtdEstoque),
       preco: precoDecimal,
-      idVendedor,
+      idVendedor: usuario.id,
       tipo: tipoProduto.toUpperCase()
     };
 
@@ -77,6 +77,10 @@ router.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (
           ordem: parseInt(ordensArray[index]) || index + 1 // fallback para index
         }))
       };
+    }
+
+    if (!usuario.isVendedor || !usuario.stripeAccountId) {
+      return res.status(403).json({ erro: "Usuário não tem conta Stripe para vender." });
     }
 
 

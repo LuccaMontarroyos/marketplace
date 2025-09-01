@@ -16,7 +16,7 @@ export default function Page() {
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
   const [enderecos, setEnderecos] = useState<Endereco[]>([]);
   const [enderecoSelecionado, setEnderecoSelecionado] = useState<Endereco>();
-  const [pagamento, setPagamento] = useState<MetodoPagamento>("pix");
+  const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento>("pix");
   const [tipoEnvio, setTipoEnvio] = useState<"normal" | "expresso">("normal");
   const [loading, setLoading] = useState(false);
 
@@ -47,11 +47,14 @@ export default function Page() {
 
     setLoading(true);
     try {
-
-      const pedido = await criarPedido(pagamento, enderecoSelecionado.id, tipoEnvio);
+      const pedido = await criarPedido(metodoPagamento, enderecoSelecionado.id, tipoEnvio);
       window.location.href = pedido.checkoutUrl;
       alert("Pedido criado com sucesso!");
     } catch (err) {
+      console.log(metodoPagamento);
+      console.log(enderecoSelecionado.id);
+      console.log(tipoEnvio);
+      
       console.error(err);
       alert("Erro ao criar pedido");
     } finally {
@@ -106,14 +109,14 @@ export default function Page() {
         <div className="bg-white p-4 rounded-2xl shadow">
           <h2 className="text-lg font-semibold mb-2">Forma de Pagamento</h2>
           <div className="flex gap-4">
-            {["pix", "boleto", "cartao"].map((opcao) => (
+            {[/*"pix",*/ "boleto", "cartao"].map((opcao) => (
               <label key={opcao} className="flex items-center gap-2">
                 <input
                   type="radio"
                   name="pagamento"
                   value={opcao}
-                  checked={pagamento === opcao}
-                  onChange={() => setPagamento(opcao as MetodoPagamento)}
+                  checked={metodoPagamento === opcao}
+                  onChange={() => setMetodoPagamento(opcao as MetodoPagamento)}
                 />
                 {opcao.toUpperCase()}
               </label>

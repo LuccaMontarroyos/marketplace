@@ -1,7 +1,8 @@
-// src/routes/stripeRoutes.ts
+// src/router/striperouter
+// .ts
 import { Router, Request, Response } from "express";
 import Stripe from "stripe";
-import { usuarioAutenticado } from "../server";
+import { usuarioAutenticado } from "../middlewares/auth";
 import { PrismaClient } from "@prisma/client";
 import express from 'express';
 
@@ -72,8 +73,8 @@ router.get("/account-link", usuarioAutenticado, async (req: Request, res: Respon
 
     const accountLink = await stripe.accountLinks.create({
       account: usuario.stripeAccountId,
-      refresh_url: "https://seusite.com/stripe/onboarding/erro", // URL para caso o vendedor interrompa o cadastro
-      return_url: "https://seusite.com/stripe/onboarding/sucesso", // URL após finalizar o cadastro
+      refresh_url: `${process.env.FRONTEND_URL}/stripe/onboarding/erro`, // URL para caso o vendedor interrompa o cadastro
+      return_url: `${process.env.FRONTEND_URL}/stripe/onboarding/sucesso`, // URL após finalizar o cadastro
       type: "account_onboarding"
     });
 

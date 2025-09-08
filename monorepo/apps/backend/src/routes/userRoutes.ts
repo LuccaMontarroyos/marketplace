@@ -279,7 +279,15 @@ router.get('/produtos/usuario', usuarioAutenticado, async (req: Request, res: Re
             return res.status(404).json({ message: 'Usuário não foi possui nenhum produto cadastrado' })
         }
 
-        return res.status(200).json(produtos);
+        const produtosComImagens = produtos.map((produto) => ({
+            ...produto,
+            imagens: produto.imagens.map((img) => ({
+                ...img,
+                url: `http://localhost:5000${img.url}`,
+            })),
+        }));
+
+        return res.status(200).json(produtosComImagens);
     } catch (error) {
         return res.status(500).json({ message: `Erro ao buscar produtos: ${error instanceof Error ? error.message : error}` });
 

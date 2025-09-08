@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { garantirSessionId, usuarioAutenticadoOpcional } from "../middlewares/auth";
 import { Router, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
+import { encode } from "punycode";
 
 const prisma = new PrismaClient();
 
@@ -194,7 +195,18 @@ router.get("/carrinho", usuarioAutenticadoOpcional, garantirSessionId, async (re
       }
     })
 
-    return res.status(200).json(carrinho);
+    const carrinhoComImagens = carrinho.map(item => ({
+      ...item,
+      produto: {
+        ...item.produto,
+        imagens: item.produto.imagens.map(img => ({
+          ...img,
+          url: `${process.env.BACKEND_URL}${encodeURI(img.url)}`
+        })) 
+      }
+    }));
+
+    return res.status(200).json(carrinhoComImagens);
   } catch (error) {
     return res.status(500).json({ message: `Erro ao buscar produtos do carrinho: ${error instanceof Error ? error.message : error}` });
 

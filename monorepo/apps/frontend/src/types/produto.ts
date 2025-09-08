@@ -6,7 +6,7 @@ export interface Produto {
     preco: number;
     qtdEstoque: number;
     idVendedor: number;
-    imagens: File[];
+    imagens: ImagemProduto[];
     descricao: string;
     tipo: TipoProduto;
 }
@@ -21,7 +21,7 @@ export interface CadastroDeProduto {
     tipo: TipoProduto;
 }
 
-export type ImagemProduto = File | { id?: number; url: string; produtoId?: number };
+export type ImagemProduto = { id?: number; url: string; produtoId?: number };
 
 export type FiltrosProduto = {
     nome? : string;

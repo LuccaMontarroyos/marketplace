@@ -5,8 +5,9 @@ import { Decimal } from "@prisma/client/runtime/library";
 import path from "path";
 import fs from "fs";
 import multer from "multer";
+import { encode } from "punycode";
 
-export const uploadDir = path.resolve(__dirname, '../../uploads');
+export const uploadDir = path.resolve(__dirname, '../../../uploads');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     if (!fs.existsSync(uploadDir)) {
@@ -91,7 +92,15 @@ router.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (
       }
     });
 
-    return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto });
+    const produtoComImagens = {
+      ...produto,
+      imagens: produto.imagens.map((img) => ({
+        ...img,
+        url: `${process.env.BACKEND_URL}${encodeURI(img.url)}`,
+      })),
+    };
+
+    return res.status(201).json({ message: 'Produto cadastrado com sucesso!', produto: produtoComImagens });
 
   } catch (error) {
     return res.status(500).json({ message: `Erro ao cadastrar produto: ${error instanceof Error ? error.message : error}` });
@@ -129,7 +138,16 @@ router.get('/produtos', async (req: Request, res: Response) => {
       }
     });
 
-    res.status(200).json(produtos);
+    
+    const produtosComImagens = produtos.map((produto) => ({
+      ...produto,
+      imagens: produto.imagens.map((img) => ({
+        ...img,
+        url: `${process.env.BACKEND_URL}${encodeURI(img.url)}`,
+      })),
+    }));
+
+    res.status(200).json(produtosComImagens);
 
   } catch (error) {
     return res.status(500).json({ message: `Erro ao listar produtos: ${error instanceof Error ? error.message : error}` });
@@ -160,12 +178,20 @@ router.get('/produtos/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Produto não encontrado' })
     }
 
-    return res.status(200).json({ produto });
+    const produtoComImagens = {
+      ...produto,
+      imagens: produto.imagens.map((img) => ({
+        ...img,
+        url: `${process.env.BACKEND_URL}${encodeURI(img.url)}`,
+      })),
+    };
+
+    return res.status(200).json({ produto: produtoComImagens });
   } catch (error) {
     return res.status(500).json({ message: `Erro ao buscar por produto: ${error instanceof Error ? error.message : error}` });
   }
 
-})
+});
 
 
 router.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), async (req: Request, res: Response) => {
@@ -218,7 +244,7 @@ router.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), asyn
       const imagensParaRemover = produtoExiste.imagens.filter(img => imagensRemovidas.includes(img.id));
 
       for (const imagem of imagensParaRemover) {
-        const pathArquivo = path.resolve(__dirname, '../../uploads', path.basename(imagem.url));
+        const pathArquivo = path.resolve(uploadDir, path.basename(imagem.url));
         if (fs.existsSync(pathArquivo)) {
           fs.unlinkSync(pathArquivo);
         }
@@ -257,7 +283,15 @@ router.put('/produtos/:id', usuarioAutenticado, upload.array('imagens', 6), asyn
       include: { imagens: true }
     });
 
-    return res.status(200).json({ produto: produtoAtualizado });
+    const produtoComImagens = {
+      ...produtoAtualizado,
+      imagens: produtoAtualizado.imagens.map((img) => ({
+        ...img,
+        url: `${process.env.BACKEND_URL}${encodeURI(img.url)}`,
+      })),
+    };
+
+    return res.status(200).json({ produto: produtoComImagens });
   } catch (error) {
     return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno no servidor' });
   }

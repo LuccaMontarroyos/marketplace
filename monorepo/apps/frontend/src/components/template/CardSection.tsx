@@ -8,7 +8,6 @@ export interface CardSectionProps {
     onAddCarrinho: () => void;
 }
 
-// export default function CardSection({ filtros }: { filtros?: FiltrosProduto }, { onAddCarrinho }: () => void) {
 export default function CardSection({filtros, onAddCarrinho}: CardSectionProps) {
     const [produtos, setProdutos] = useState<Produto[]>([]);
 
@@ -24,7 +23,7 @@ export default function CardSection({filtros, onAddCarrinho}: CardSectionProps) 
     return (
         <div className="p-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {produtos.map((produto) => (
-                <Card key={produto.id} idProduto={produto.id} nome={produto.nome} descricao={produto.descricao} idVendedor={produto.idVendedor} preco={produto.preco} onAddCarrinho={onAddCarrinho} />
+                <Card key={produto.id} imagem={produto.imagens.length ? produto.imagens[0].url : "/imagem1.jpg" } idProduto={produto.id} nome={produto.nome} descricao={produto.descricao} idVendedor={produto.idVendedor} preco={produto.preco} onAddCarrinho={onAddCarrinho} />
             ))}
         </div>
     )

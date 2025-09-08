@@ -15,10 +15,11 @@ export interface CardProps {
 }
 
 export default function Card({ nome, idProduto, imagem, descricao, preco, onAddCarrinho }: CardProps) {
-
+  console.log(imagem);
   const handleAddShoppingCart = async (e: React.MouseEvent) => {
     e.preventDefault();
 
+    
     try {
       await adicionarAoCarrinho(idProduto, 1);
       if(onAddCarrinho) onAddCarrinho();
@@ -37,6 +38,7 @@ export default function Card({ nome, idProduto, imagem, descricao, preco, onAddC
           alt={`Imagem do ${nome}`}
           width={250}
           height={200}
+          unoptimized
         />
         <div className="p-4 flex flex-col gap-2">
           <h2 className="text-lg font-semibold text-gray-800">

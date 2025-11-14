@@ -38,6 +38,37 @@ router.post('/mensagens', usuarioAutenticado, async (req: Request, res: Response
   }
 })
 
+router.get('/mensagens/conversa/:idOutroUsuario', usuarioAutenticado, async (req: Request, res: Response) => {
+  try {
+    const usuario = (req as any).usuario;
+    const idOutroUsuario = Number(req.params.idOutroUsuario);
+
+    if (isNaN(idOutroUsuario)) {
+      return res.status(400).json({ message: 'ID de usuário inválido' });
+    }
+
+    const mensagens = await prisma.mensagem.findMany({
+      where: {
+        OR: [
+          { idUsuarioEmissor: usuario.id, idUsuarioReceptor: idOutroUsuario },
+          { idUsuarioEmissor: idOutroUsuario, idUsuarioReceptor: usuario.id },
+        ],
+      },
+      include: {
+        usuarioEmissor: { select: { id: true, nome: true, email: true, } },
+        usuarioReceptor: { select: { id: true, nome: true, email: true, } }
+      },
+      orderBy: {
+        dataEnvio: 'asc',
+      },
+    });
+
+    return res.status(200).json({ mensagens });
+  } catch (error) {
+    return res.status(500).json({ message: error instanceof Error ? error.message : 'Erro interno do servidor' });
+  }
+});
+
 router.get('/mensagens', usuarioAutenticado, async (req: Request, res: Response) => {
 
   try {
@@ -93,34 +124,34 @@ router.get('/mensagens/:id', usuarioAutenticado, async (req: Request, res: Respo
 })
 
 router
-.delete('/mensagens/:id', usuarioAutenticado, async (req: Request, res: Response) => {
-  try {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: 'ID inválido' })
-    }
-    const usuario = (req as any).usuario;
-
-    const mensagem = await prisma.mensagem.findUnique({
-      where: {
-        id
+  .delete('/mensagens/:id', usuarioAutenticado, async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'ID inválido' })
       }
-    })
+      const usuario = (req as any).usuario;
 
-    if (!mensagem) {
-      return res.status(404).json({ message: 'Mensagem não foi encontrada' });
+      const mensagem = await prisma.mensagem.findUnique({
+        where: {
+          id
+        }
+      })
+
+      if (!mensagem) {
+        return res.status(404).json({ message: 'Mensagem não foi encontrada' });
+      }
+
+      if ((mensagem.idUsuarioEmissor !== usuario.id && mensagem.idUsuarioReceptor !== usuario.id && !usuario.isAdmin)) {
+        return res.status(403).json({ message: 'Você não tem permissão para acessar essa mensagem' });
+      }
+
+
+      return res.status(200).json({ message: 'Mensagem excluída com sucesso', mensagem })
+
+    } catch (error) {
+      return res.status(500).json({ message: `Erro ao excluir mensagem: ${error instanceof Error ? error.message : error}` });
     }
-
-    if ((mensagem.idUsuarioEmissor !== usuario.id && mensagem.idUsuarioReceptor !== usuario.id && !usuario.isAdmin)) {
-      return res.status(403).json({ message: 'Você não tem permissão para acessar essa mensagem' });
-    }
-
-
-    return res.status(200).json({ message: 'Mensagem excluída com sucesso', mensagem })
-
-  } catch (error) {
-    return res.status(500).json({ message: `Erro ao excluir mensagem: ${error instanceof Error ? error.message : error}` });
-  }
-})
+  })
 
 export default router;

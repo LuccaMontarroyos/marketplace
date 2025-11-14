@@ -72,33 +72,34 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
         }`}
     >
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-lg font-semibold">Seu Carrinho</h2>
-        <button onClick={onFechar}>x</button>
+      <div className="flex justify-between items-center p-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold texto-azul">Seu Carrinho</h2>
+        <button onClick={onFechar} className="texto-azul hover:texto-verde text-xl font-bold">×</button>
       </div>
 
       {/* Corpo com scroll */}
       <div className="flex flex-col h-[calc(100%-64px)]"> {/* 64px = altura do header */}
         <div className="flex-1 overflow-y-auto p-4">
-          {loading && <p>Carregando itens...</p>}
-          {!loading && itens.length === 0 && <p>Seu carrinho está vazio</p>}
+          {loading && <p className="texto-azul">Carregando itens...</p>}
+          {!loading && itens.length === 0 && <p className="texto-azul text-center py-8">Seu carrinho está vazio</p>}
 
           <section className="flex flex-col gap-5">
             {itens.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between pb-5 border-b border-black"
+                className="flex items-center justify-between pb-5 border-b border-gray-200"
               >
                 <Image
-                  src={item.produto.imagens[0]?.url || "/imagem1.jpg"}
+                  src={item.produto.imagens[0]?.url || "/defaultProduct.jpg"}
                   alt={item.produto.nome}
                   width={50}
                   height={50}
                   className='rounded'
+                  unoptimized
                 />
                 <div className="flex-1 px-2">
-                  <p className="font-medium">{item.produto.nome}</p>
-                  <p className="text-gray-600">R$ {Number(item.precoAtual).toFixed(2)}</p>
+                  <p className="font-medium texto-azul">{item.produto.nome}</p>
+                  <p className="texto-verde font-semibold">R$ {Number(item.precoAtual).toFixed(2)}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -132,12 +133,12 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
         </div>
 
         {/* Rodapé fixo */}
-        <div className="p-4 border-t bg-white">
+        <div className="p-4 border-t border-gray-200 bg-white">
           <div className="flex justify-between mb-4 px-2">
-            <p>TOTAL</p>
-            <strong>R$ {total.toFixed(2)}</strong>
+            <p className="texto-azul font-semibold">TOTAL</p>
+            <strong className="texto-verde text-xl">R$ {total.toFixed(2)}</strong>
           </div>
-          <button onClick={()=> router.push("/pedido")} className="botao-verde w-full" disabled={itens.length === 0}>
+          <button onClick={()=> router.push("/pedido")} className="botao-verde w-full text-white py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled={itens.length === 0}>
             Confirmar
           </button>
         </div>

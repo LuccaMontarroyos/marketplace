@@ -6,9 +6,12 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useEffect, useState } from "react";
-import { IconEye, IconEyeOff, IconPencil } from "@tabler/icons-react";
+import { IconEye, IconEyeOff, IconPencil, IconUser, IconHeart, IconPackage, IconShoppingBag } from "@tabler/icons-react";
 import { atualizarUsuario, buscarUsuarioPorId, trocarSenha } from "@/services/usuario";
 import { toast } from "react-toastify";
+import FavoritosSection from "@/components/template/FavoritosSection";
+import PedidosSection from "@/components/template/PedidosSection";
+import PedidosVendedorSection from "@/components/template/PedidosVendedorSection";
 
 export default function PerfilUsuario() {
     const { usuario } = useAuth();
@@ -37,6 +40,7 @@ export default function PerfilUsuario() {
     const [editando, setEditando] = useState(false);
     const [trocandoSenha, setTrocandoSenha] = useState(false);
     const [carregando, setCarregando] = useState(true);
+    const [abaAtiva, setAbaAtiva] = useState<"perfil" | "favoritos" | "pedidos" | "pedidosVendedor">("perfil");
 
     useEffect(() => {
         const carregarDados = async () => {
@@ -95,31 +99,95 @@ export default function PerfilUsuario() {
     const handleTrocarSenha = async () => {
 
         if (senhaForm.novaSenha !== senhaForm.confirmaNovaSenha) {
-            alert("As senhas não coincidem.");
+            toast.error("As senhas não coincidem.");
             return;
         }
 
         try {
             const resposta = await trocarSenha({ senhaAtual: senhaForm.senhaAtual, senhaNova: senhaForm.novaSenha });
-            alert(resposta.message);
+            toast.success(resposta.message || "Senha alterada com sucesso!");
             setTrocandoSenha(false);
             setSenhaForm({
                 senhaAtual: "",
                 novaSenha: "",
                 confirmaNovaSenha: "",
             })
-            toast.success("Senha alterada com sucesso!");
         } catch (error: any) {
-            toast.error("Erro ao alterar senha: ", error);
+            toast.error(error.response?.data?.message || "Erro ao alterar senha");
         }
 
     };
 
     return (
-        <div className="min-h-lvh bg-gray-100 text-black flex flex-col items-center pb-10 gap-1">
+        <div className="min-h-lvh bg-gray-50 text-black flex flex-col items-center pb-10 gap-4">
             <LogoAlt botaoSair={true} />
-            <div className="p-5 w-1/2 bg-white rounded-xl flex items-center justify-around mt-10">
-                <div className="relative w-[180px] h-[180px] rounded-full overflow-hidden border-verde group">
+            
+            {/* Abas de navegação */}
+            <div className="w-full max-w-6xl px-4 mt-6">
+                <div className="flex flex-wrap gap-2 border-b border-gray-200">
+                    <button
+                        onClick={() => setAbaAtiva("perfil")}
+                        className={`px-4 py-2 font-medium transition-colors ${
+                            abaAtiva === "perfil"
+                                ? "texto-verde border-b-2 border-verde"
+                                : "texto-azul hover:texto-verde"
+                        }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <IconUser size={20} />
+                            <span className="hidden sm:inline">Perfil</span>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => setAbaAtiva("favoritos")}
+                        className={`px-4 py-2 font-medium transition-colors ${
+                            abaAtiva === "favoritos"
+                                ? "texto-verde border-b-2 border-verde"
+                                : "texto-azul hover:texto-verde"
+                        }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <IconHeart size={20} />
+                            <span className="hidden sm:inline">Favoritos</span>
+                        </div>
+                    </button>
+                    <button
+                        onClick={() => setAbaAtiva("pedidos")}
+                        className={`px-4 py-2 font-medium transition-colors ${
+                            abaAtiva === "pedidos"
+                                ? "texto-verde border-b-2 border-verde"
+                                : "texto-azul hover:texto-verde"
+                        }`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <IconPackage size={20} />
+                            <span className="hidden sm:inline">Meus Pedidos</span>
+                        </div>
+                    </button>
+                    {usuario?.isVendedor && (
+                        <button
+                            onClick={() => setAbaAtiva("pedidosVendedor")}
+                            className={`px-4 py-2 font-medium transition-colors ${
+                                abaAtiva === "pedidosVendedor"
+                                    ? "texto-verde border-b-2 border-verde"
+                                    : "texto-azul hover:texto-verde"
+                            }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <IconShoppingBag size={20} />
+                                <span className="hidden sm:inline">Pedidos Recebidos</span>
+                            </div>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Conteúdo das abas */}
+            <div className="w-full max-w-6xl px-4">
+                {abaAtiva === "perfil" && (
+                    <div className="p-4 md:p-6 bg-white rounded-xl shadow-md">
+                        <div className="flex flex-col md:flex-row items-center md:items-start justify-around gap-6">
+                <div className="relative w-[150px] h-[150px] md:w-[180px] md:h-[180px] rounded-full overflow-hidden border-verde group">
                     <label htmlFor="inputFoto" className="cursor-pointer">
                         <Image
                             src={dadosEditaveis.fotoPerfil || usuario.fotoPerfil || "/icone-perfil.png"}
@@ -157,11 +225,11 @@ export default function PerfilUsuario() {
                         />
                     )}
                 </div>
-                <div className="flex flex-col gap-y-5 items-start pt-5 w-2/3 text-black">
+                <div className="flex flex-col gap-y-5 items-start pt-5 w-full md:w-2/3 text-black">
                     {editando ? (
                         <>
                             <input
-                                className="border-b-1 border-gray-300 w-full"
+                                className="border-b-2 border-gray-300 w-full texto-azul placeholder:text-gray-400 focus:border-verde focus:outline-none"
                                 value={dadosEditaveis.nome}
                                 onChange={(e) =>
                                     setDadosEditaveis({ ...dadosEditaveis, nome: e.target.value })
@@ -169,7 +237,7 @@ export default function PerfilUsuario() {
                                 placeholder="Nome"
                             />
                             <input
-                                className="border-b-1 border-gray-300 w-full"
+                                className="border-b-2 border-gray-300 w-full texto-azul placeholder:text-gray-400 focus:border-verde focus:outline-none"
                                 value={dadosEditaveis.celular}
                                 onChange={(e) =>
                                     setDadosEditaveis({
@@ -180,7 +248,7 @@ export default function PerfilUsuario() {
                                 placeholder="Celular"
                             />
                             <input
-                                className="border-b-1 border-gray-300 w-full"
+                                className="border-b-2 border-gray-300 w-full texto-azul placeholder:text-gray-400 focus:border-verde focus:outline-none"
                                 value={dadosEditaveis.email}
                                 onChange={(e) =>
                                     setDadosEditaveis({
@@ -191,7 +259,7 @@ export default function PerfilUsuario() {
                                 placeholder="Email"
                             />
                             <input
-                                className="border-b-1 border-gray-300 w-full"
+                                className="border-b-2 border-gray-300 w-full texto-azul placeholder:text-gray-400 focus:border-verde focus:outline-none"
                                 value={dadosEditaveis.cpf}
                                 onChange={(e) =>
                                     setDadosEditaveis({
@@ -199,7 +267,7 @@ export default function PerfilUsuario() {
                                         cpf: e.target.value,
                                     })
                                 }
-                                placeholder="border-b-1 border-gray-300 w-full"
+                                placeholder="CPF"
                             />
                             <button className="botao-verde" onClick={handleEditarDados}>
                                 Salvar alterações
@@ -208,10 +276,10 @@ export default function PerfilUsuario() {
                     ) : (
                         <>
                             <div className="flex flex-col gap-2">
-                                <p className="text-xl font-bold">{usuario.nome}</p>
-                                <p>{usuario.celular}</p>
-                                <p>{usuario.email}</p>
-                                <p>{usuario.cpf}</p>
+                                <p className="text-xl font-bold texto-azul">{usuario.nome}</p>
+                                <p className="texto-azul">{usuario.celular}</p>
+                                <p className="texto-azul">{usuario.email}</p>
+                                <p className="texto-azul">{usuario.cpf}</p>
                             </div>
                             <div className="flex w-full justify-between gap-4">
                                 <button
@@ -238,7 +306,7 @@ export default function PerfilUsuario() {
                                     </button>)}
                             </div>
 
-                            <p className="text-gray-400">Usuário desde {dataFormatada}</p>
+                            <p className="texto-azul opacity-70">Usuário desde {dataFormatada}</p>
                         </>
                     )}
 
@@ -246,7 +314,7 @@ export default function PerfilUsuario() {
                         <div className="flex flex-col gap-2 mt-4 w-full">
                             <div className="relative w-full">
                                 <input
-                                    className="input w-full pr-10"
+                                    className="input w-full pr-10 texto-azul placeholder:text-gray-400"
                                     type={visivel.senhaAtual ? "text" : "password"}
                                     placeholder="Senha atual"
                                     value={senhaForm.senhaAtual}
@@ -256,7 +324,7 @@ export default function PerfilUsuario() {
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-3 top-2"
+                                    className="absolute right-3 top-2 texto-azul"
                                     onClick={() =>
                                         setVisivel({ ...visivel, senhaAtual: !visivel.senhaAtual })
                                     }
@@ -268,7 +336,7 @@ export default function PerfilUsuario() {
 
                             <div className="relative w-full">
                                 <input
-                                    className="input w-full pr-10"
+                                    className="input w-full pr-10 texto-azul placeholder:text-gray-400"
                                     type={visivel.novaSenha ? "text" : "password"}
                                     placeholder="Nova senha"
                                     value={senhaForm.novaSenha}
@@ -278,7 +346,7 @@ export default function PerfilUsuario() {
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-3 top-2"
+                                    className="absolute right-3 top-2 texto-azul"
                                     onClick={() =>
                                         setVisivel({ ...visivel, novaSenha: !visivel.novaSenha })
                                     }
@@ -288,7 +356,7 @@ export default function PerfilUsuario() {
                             </div>
                             <div className="relative w-full">
                                 <input
-                                    className="input w-full pr-10"
+                                    className="input w-full pr-10 texto-azul placeholder:text-gray-400"
                                     type={visivel.confirmaNovaSenha ? "text" : "password"}
                                     placeholder="Confirmar nova senha"
                                     value={senhaForm.confirmaNovaSenha}
@@ -298,7 +366,7 @@ export default function PerfilUsuario() {
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-3 top-2"
+                                    className="absolute right-3 top-2 texto-azul"
                                     onClick={() =>
                                         setVisivel({ ...visivel, confirmaNovaSenha: !visivel.confirmaNovaSenha })
                                     }
@@ -312,16 +380,38 @@ export default function PerfilUsuario() {
                         </div>
                     )}
                 </div>
-            </div>
-            <div className="bg-white flex gap-x-50 py-10 w-1/2 rounded-xl justify-center">
-                <Link className="botao-verde" href={"/usuario/enderecos"}>
-                    Endereços do usuário
-                </Link>
-                <Link className="botao-verde" href={"/usuario/produtos"}>
-                    Produtos do usuário
-                </Link>
-            </div>
+                    </div>
+                    <div className="flex flex-wrap gap-4 justify-center mt-6 pt-6 border-t">
+                        <Link className="botao-verde px-4 py-2 text-white rounded-lg" href={"/usuario/enderecos"}>
+                            Endereços
+                        </Link>
+                        {usuario?.isVendedor && (
+                            <Link className="botao-verde px-4 py-2 text-white rounded-lg" href={"/usuario/produtos"}>
+                                Meus Produtos
+                            </Link>
+                        )}
+                    </div>
+                </div>
+                )}
 
+                {abaAtiva === "favoritos" && (
+                    <div className="p-4 md:p-6 bg-white rounded-xl shadow-md">
+                        <FavoritosSection />
+                    </div>
+                )}
+
+                {abaAtiva === "pedidos" && (
+                    <div className="p-4 md:p-6 bg-white rounded-xl shadow-md">
+                        <PedidosSection />
+                    </div>
+                )}
+
+                {abaAtiva === "pedidosVendedor" && usuario?.isVendedor && (
+                    <div className="p-4 md:p-6 bg-white rounded-xl shadow-md">
+                        <PedidosVendedorSection />
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

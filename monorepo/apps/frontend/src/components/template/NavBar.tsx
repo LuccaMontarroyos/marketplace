@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
 import { criarContaStripe, gerarLinkOnBoarding } from "@/services/stripe";
 import { useEffect } from "react";
+import { toast } from "react-toastify";
 
 export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => void }) {
     const { token, logout } = useAuth();
@@ -29,7 +30,7 @@ export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => v
 
     const handleTornarVendedor = async () => {
         try {
-            
+
             await criarContaStripe().catch((err) => {
                 if (err.response?.data?.erro === "Usuário já possui conta no Stripe.") {
                     console.log("Conta Stripe já existe, seguimos...");
@@ -38,10 +39,10 @@ export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => v
                 }
             });
 
-            
+
             const linkData = await gerarLinkOnBoarding();
 
-            
+
             window.location.href = linkData.url;
         } catch (error) {
             console.error(error);
@@ -61,16 +62,26 @@ export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => v
     return (
         <>
             {usuarioLogado ? (
-                <nav className="flex gap-20 text-md">
-                    {
-                        usuario?.isVendedor ? <NavBarItem link={"/cadastro/produto"} texto={"Cadastrar produto"} /> : <NavBarItem onClick={handleTornarVendedor} texto="Me tornar vendedor" />
-                    }
-                    <NavBarItem onClick={() => { logout(); router.push("/login"); }} texto={"Refazer pedido"} />
+                <nav className="flex items-center gap-4 md:gap-6 lg:gap-8 text-sm md:text-base">
+                    {usuario?.isAdmin && (
+                        <NavBarItem link={"/admin"} texto={"Admin"} />
+                    )}
+                    {usuario?.isVendedor && (
+                        <NavBarItem link={"/cadastro/produto"} texto={"Cadastrar produto"} />
+                    )}
                     <CarrinhoItem onClick={onToggleCarrinho} icone={IconShoppingCart} />
                     <NavBarItem link={"/perfil"} texto={"Perfil"} />
+                    <NavBarItem
+                        onClick={() => {
+                            logout();
+                            router.push("/login");
+                            toast.success("Logout realizado com sucesso!");
+                        }}
+                        texto={"Sair"}
+                    />
                 </nav>
             ) : (
-                <nav className="flex gap-20 text-md">
+                <nav className="flex items-center gap-4 md:gap-6 lg:gap-8 text-sm md:text-base">
                     <CarrinhoItem onClick={onToggleCarrinho} icone={IconShoppingCart} />
                     <NavBarItem onClick={irParaLogin} texto={"Login"} />
                     <NavBarItem onClick={irParaCadastro} texto={"Cadastro"} />

@@ -33,22 +33,25 @@ export default function Home() {
     // }
 
     return (
-        <div>
+        <div className="min-h-screen bg-gray-50">
             <Cabecalho onToggleFiltros={() => setMostrarFiltros(!mostrarFiltros)} onBuscarProdutos={handleBuscarProdutos} onToggleCarrinho={() => setCarrinhoAberto(!carrinhoAberto)} />
-            <main className="bg-white min-h-screen flex gap-6 p-4">
+            <div className="w-full">
+                <BannerCarousel />
+            </div>
+            <main className="bg-gray-50 min-h-screen flex flex-col md:flex-row gap-4 md:gap-6 p-4">
                 {mostrarFiltros && (
-                    <div className="relative">
+                    <div className="relative bg-white rounded-lg shadow-md p-4 md:p-6">
                         <FiltroProduto filtrosAtuais={filtros} onFiltrar={handleFiltrarProdutos} />
                         <button
                             onClick={() => setMostrarFiltros(false)}
-                            className="absolute top-2 right-2 texto-verde rounded-full p-1 "
+                            className="absolute top-2 right-2 texto-verde hover:texto-azul rounded-full p-1 text-xl font-bold"
+                            title="Fechar filtros"
                         >
-                            ✕
+                            ×
                         </button>
                     </div>
                 )}
-                <div className="flex-1">
-                    <BannerCarousel />
+                <div className="flex-1 w-full">
                     <CardSection onAddCarrinho={atualizarCarrinhoLocal} filtros={filtros} />
                 </div>
             </main>

@@ -11,6 +11,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { Produto } from "@/types/Produto";
 import { Usuario } from "@/types/Usuario";
 import { buscarUsuarioPorId } from "@/services/usuario";
+import { adicionarFavorito, removerFavorito, buscarFavoritos } from "@/services/favorito";
+import { useAuth } from "@/context/AuthContext";
+import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
+import AvaliacoesProduto from "@/components/template/AvaliacoesProduto";
 
 export default function Page() {
     const params = useParams();
@@ -20,7 +24,9 @@ export default function Page() {
     const [vendedor, setVendedor] = useState<Usuario | null>(null);
     const [carregando, setCarregando] = useState(true);
     const [adicionando, setAdicionando] = useState(false);
-    const idVendedor = 1;
+    const [ehFavorito, setEhFavorito] = useState(false);
+    const { usuario } = useAuth();
+    const idVendedor = produto?.idVendedor || 1;
 
     useEffect(() => {
         if (idProduto) {
@@ -44,6 +50,23 @@ export default function Page() {
             buscarProduto();
         }
     }, [idProduto]);
+
+    useEffect(() => {
+        const verificarFavorito = async () => {
+            if (usuario && produto) {
+                try {
+                    const favoritos = await buscarFavoritos();
+                    const favoritoEncontrado = favoritos.some(
+                        (f) => f.idProduto === produto.id
+                    );
+                    setEhFavorito(favoritoEncontrado);
+                } catch (error) {
+                    console.error("Erro ao verificar favorito:", error);
+                }
+            }
+        };
+        verificarFavorito();
+    }, [usuario, produto]);
 
     if (carregando) {
         return (
@@ -82,12 +105,36 @@ export default function Page() {
         }
     };
 
+    const handleToggleFavorito = async () => {
+        if (!usuario) {
+            toast.error("Você precisa estar logado para adicionar aos favoritos");
+            return;
+        }
+
+        if (!produto) return;
+
+        try {
+            if (ehFavorito) {
+                await removerFavorito(produto.id);
+                setEhFavorito(false);
+                toast.success("Produto removido dos favoritos");
+            } else {
+                await adicionarFavorito(produto.id);
+                setEhFavorito(true);
+                toast.success("Produto adicionado aos favoritos");
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Erro ao atualizar favorito");
+            console.error("Erro ao atualizar favorito:", error);
+        }
+    };
+
     return (
-        <div className="bg-gray-200 min-h-lvh text-black">
+        <div className="bg-gray-50 min-h-screen text-black">
             <LogoAlt />
             <ToastContainer position="top-right" autoClose={3000} />
 
-            <div className="py-15 bg-white max-w-6xl mx-auto p-4 flex flex-col md:flex-row gap-8 mt-10 rounded-md">
+            <div className="py-15 bg-white max-w-6xl mx-auto p-4 md:p-6 flex flex-col md:flex-row gap-8 mt-6 md:mt-10 rounded-md shadow-md">
                 <div className="flex flex-col md:flex-row gap-4">
                     {!semImagens ? (
                         <div className="flex md:flex-col gap-2">
@@ -121,57 +168,81 @@ export default function Page() {
                     )}
 
 
-                    <div className="flex items-center justify-center bg-gray-100 rounded-lg w-[500px] h-[500px]">
+                    <div className="flex items-center justify-center bg-gray-100 rounded-lg w-full md:w-[500px] h-[300px] md:h-[500px]">
                         {!semImagens ? (
                             <Image
                                 src={imagemPrincipal ?? produto.imagens[0].url}
                                 alt={`Imagem principal de ${produto.nome}`}
                                 width={500}
                                 height={500}
-                                className="object-cover rounded-lg max-h-[500px]"
+                                className="object-cover rounded-lg max-h-[500px] w-full h-full"
+                                unoptimized
                             />
                         ) : (
-                            <div className="w-[90%] h-[90%] bg-gray-200 animate-pulse rounded-lg" />
+                            <Image
+                                src="/defaultProduct.jpg"
+                                alt={`Imagem padrão de ${produto.nome}`}
+                                width={500}
+                                height={500}
+                                className="object-cover rounded-lg w-full h-full"
+                                unoptimized
+                            />
                         )}
                     </div>
                 </div>
 
 
                 <div className="flex-1">
-                    <h1 className="text-3xl font-bold mb-2">{produto.nome}</h1>
+                    <div className="flex items-start justify-between mb-2">
+                        <h1 className="text-3xl font-bold">{produto.nome}</h1>
+                        {usuario && (
+                            <button
+                                onClick={handleToggleFavorito}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                title={ehFavorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                            >
+                                {ehFavorito ? (
+                                    <IconHeartFilled size={28} className="text-red-500" />
+                                ) : (
+                                    <IconHeart size={28} className="text-gray-400" />
+                                )}
+                            </button>
+                        )}
+                    </div>
 
-                    <p className="text-2xl font-semibold mb-4 text-green-700">
+                    <p className="text-2xl font-semibold mb-4 texto-verde">
                         {Number(produto.preco).toLocaleString("pt-BR", {
                             style: "currency",
                             currency: "BRL",
                         })}
                     </p>
 
-                    <p className="text-gray-700 mb-6">{produto.descricao}</p>
+                    <p className="texto-azul mb-6">{produto.descricao}</p>
 
-                    <button
-                        onClick={() => handleAdicionarCarrinho(1)}
-                        disabled={adicionando}
-                        className={`text-white px-6 py-2 rounded add-carrinho transition ${adicionando ? "opacity-70 cursor-not-allowed" : ""
-                            }`}
-                    >
-                        {adicionando ? "Adicionando..." : "Adicionar ao Carrinho"}
-                    </button>
+                    <div className="flex gap-4 mb-6">
+                        <button
+                            onClick={() => handleAdicionarCarrinho(1)}
+                            disabled={adicionando}
+                            className={`text-white px-6 py-2 rounded add-carrinho transition ${adicionando ? "opacity-70 cursor-not-allowed" : ""
+                                }`}
+                        >
+                            {adicionando ? "Adicionando..." : "Adicionar ao Carrinho"}
+                        </button>
+                    </div>
 
 
                     <div className="mt-8 border-t border-gray-300 pt-4">
-                        <h2 className="text-lg font-semibold mb-2">
+                        <h2 className="text-lg font-semibold mb-2 texto-azul">
                             Informações adicionais
                         </h2>
-                        <ul className="list-disc list-inside text-gray-700">
+                        <ul className="list-disc list-inside texto-azul space-y-1">
                             <li>Quantidade em estoque: {produto.qtdEstoque}</li>
                             <li>Tipo do produto: {produto.tipo}</li>
-                            <li>Produto postado em 23 de Nov de 2023</li>
                             <li>
                                 Vendido por{" "}
                                 <Link
                                     href={`/usuarios/${idVendedor}`}
-                                    className="link-perfil text-blue-600 hover:underline"
+                                    className="link-perfil hover:underline"
                                 >
                                     {vendedor?.nome}
                                 </Link>
@@ -180,6 +251,12 @@ export default function Page() {
                     </div>
                 </div>
             </div>
+
+            {produto && (
+                <div className="bg-white max-w-6xl mx-auto p-4 mt-6 rounded-md">
+                    <AvaliacoesProduto idProduto={produto.id} />
+                </div>
+            )}
         </div>
     );
 }

@@ -17,6 +17,7 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
   const [itens, setItens] = useState<ItemCarrinho[]>([]);
   const [loading, setLoading] = useState(false);
 
+  console.log(itens);
   const router = useRouter();
   
   const buscarProdutos = async () => {

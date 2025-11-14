@@ -51,9 +51,6 @@ export default function Page() {
       window.location.href = pedido.checkoutUrl;
       alert("Pedido criado com sucesso!");
     } catch (err) {
-      console.log(metodoPagamento);
-      console.log(enderecoSelecionado.id);
-      console.log(tipoEnvio);
       
       console.error(err);
       alert("Erro ao criar pedido");

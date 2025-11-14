@@ -9,6 +9,7 @@ export interface Produto {
     imagens: ImagemProduto[];
     descricao: string;
     tipo: TipoProduto;
+    createdAt: Date;
 }
 
 export interface CadastroDeProduto {

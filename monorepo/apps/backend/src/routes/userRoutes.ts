@@ -3,7 +3,7 @@ import { Router, Response, Request } from "express";
 import { z } from "zod";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { usuarioAutenticado } from "../middlewares/auth";
+import { usuarioAutenticado, usuarioAutenticadoOpcional } from "../middlewares/auth";
 const prisma = new PrismaClient();
 
 const router = Router();
@@ -109,18 +109,23 @@ router.post('/usuarios/login', async (req: Request, res: Response) => {
     }
 })
 
-router.get('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Response) => {
+router.get('/usuarios/:id', usuarioAutenticadoOpcional, async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     if (isNaN(id)) {
         return res.status(400).json({ message: 'ID inválido' })
     }
 
     try {
-        const usuarioLogado = (req as any).usuario;
+        const usuarioLogado = (req as any).usuario || null;
 
         const usuario = await prisma.usuario.findUnique({
             where: {
                 id
+            },
+            include: {
+                produtos: true,
+                pedidos: true,
+                Endereco: true,
             }
         })
 
@@ -129,12 +134,15 @@ router.get('/usuarios/:id', usuarioAutenticado, async (req: Request, res: Respon
             return res.status(404).json({ message: "Usuário não encontrado!" });
         }
 
-        if (usuario.id !== usuarioLogado.id) {
-            return res.status(403).json({ message: 'Você não pode acessar dados de outro usuário' })
-        }
+        const isProprioUsuario = usuarioLogado && usuarioLogado.id === usuario.id;
+
+        if (!isProprioUsuario) {
+            delete (usuario as any).senha;
+            delete (usuario as any).cpf;
+            delete (usuario as any).isAdmin;
+          }
 
         return res.status(200).json(usuario);
-
     } catch (error) {
         return res.status(500).json({ message: `Erro ao buscar usuário: ${error instanceof Error ? error.message : error}` });
     }

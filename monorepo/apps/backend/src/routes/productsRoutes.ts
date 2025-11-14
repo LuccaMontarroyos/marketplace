@@ -27,9 +27,8 @@ const prisma = new PrismaClient();
 
 const router = Router();
 
-router.get('/produtos/usuario', usuarioAutenticado, async (req: Request, res: Response) => {
+router.get('/produtos/usuario', usuarioAutenticadoOpcional, async (req: Request, res: Response) => {
   const usuario = (req as any).usuario;
-
   try {
     const produtos = await prisma.produto.findMany({
       where: {
@@ -186,7 +185,7 @@ router.get('/produtos/:id', async (req: Request, res: Response) => {
       })),
     };
 
-    return res.status(200).json({ produto: produtoComImagens });
+    return res.status(200).json(produtoComImagens);
   } catch (error) {
     return res.status(500).json({ message: `Erro ao buscar por produto: ${error instanceof Error ? error.message : error}` });
   }

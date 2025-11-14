@@ -18,7 +18,7 @@ export async function limparCarrinhosExpirados() {
       },
     });
   } catch (error) {
-    console.log(`Erro ao limpar carrinhos expirados: ${error}`);
+    throw new Error("Erro ao limpar produtos do carrinho.")
   }
 }
 
@@ -50,9 +50,10 @@ router.post("/carrinho", usuarioAutenticadoOpcional, garantirSessionId, async (r
 
     const carrinhoExistente = await prisma.carrinho.findFirst({
       where: {
+        idProduto,
         OR: [
-          { idUsuario: idUsuario || undefined, idProduto },
-          { sessionId: sessionId || undefined, idProduto }
+          ...(idUsuario ? [{idUsuario}] : [] ),
+          ...(sessionId ? [{sessionId}] : [] )
         ]
       }
     });
@@ -220,9 +221,6 @@ router.delete("/carrinho/:idProduto", usuarioAutenticadoOpcional, garantirSessio
   if (isNaN(idProduto)) {
     return res.status(400).json({ message: 'ID inválido' })
   }
-
-  console.log("Esse é o id de usuário: ", usuario);
-  console.log("Esse é o sessionID", sessionId);
 
   if (!usuario?.id && !sessionId) {
     return res.status(400).json({ error: "Usuário não autenticado e sem sessionId válido" });

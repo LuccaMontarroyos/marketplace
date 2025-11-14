@@ -95,8 +95,8 @@ model Pedido {
   sessionId           String?
   dataPedido          DateTime        @default(now())
   dataEntregaEstimada DateTime
-  idEnderecoEntrega   Int
-  enderecoEntrega     Endereco        @relation(fields: [idEnderecoEntrega], references: [id])
+  idEnderecoEntrega   Int?
+  enderecoEntrega     Endereco?        @relation(fields: [idEnderecoEntrega], references: [id])
   Pagamento           Pagamento[]
   PedidoProduto       PedidoProduto[]
   createdAt           DateTime        @default(now())
@@ -143,8 +143,8 @@ model Avaliacao {
 
 model Endereco {
   id              Int      @id @default(autoincrement())
-  idUsuario       Int
-  usuario         Usuario  @relation(fields: [idUsuario], references: [id])
+  idUsuario       Int?
+  usuario         Usuario?  @relation(fields: [idUsuario], references: [id])
   logradouro      String
   numero          String
   complemento     String?
@@ -153,6 +153,7 @@ model Endereco {
   estado          String
   cep             String
   pontoReferencia String?
+  sessionId String?
   Pedido          Pedido[]
   createdAt       DateTime @default(now())
 

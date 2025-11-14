@@ -1,4 +1,6 @@
-  export type Usuario = {
+import { Produto } from "./Produto";
+
+export type Usuario = {
   id: number;
   nome: string;
   email: string;
@@ -8,6 +10,7 @@
   fotoPerfil: string;
   isAdmin: boolean;
   isVendedor: boolean;
+  produtos: Produto[];
   createdAt: Date;
   updatedAt: Date;
 };

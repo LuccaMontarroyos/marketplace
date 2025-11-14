@@ -12,6 +12,14 @@ export async function buscarProdutosDoUsuario(): Promise<Produto[]> {
     return resposta.data;
 }
 
+export async function buscarProdutoById(id: number): Promise<Produto> {
+    const token = obterToken();
+    const resposta = await api.get<Produto>(`/produtos/${id}`, token ? {
+        headers: { Authorization: `Bearer ${token}`}
+    } : {});
+    return resposta.data;
+}
+
 export async function cadastrarProduto(formData: FormData) {
     const token = obterToken();
     const resposta = await api.post("/produtos", formData, {

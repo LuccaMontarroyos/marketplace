@@ -35,8 +35,6 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 
-console.log(uploadDir);
-
 app.use('/uploads', express.static(uploadDir));
 
 app.use(cookieParser());
@@ -53,7 +51,6 @@ app.use(messageRoutes);
 
 
 cron.schedule("0 * * * *", async () => {
-  console.log("Removendo itens expirados do carrinho...");
   await limparCarrinhosExpirados();
 });
 
@@ -81,9 +78,16 @@ app.post('/pedidos', usuarioAutenticadoOpcional, garantirSessionId, async (req, 
     // Buscar carrinho
 
     
-    if (!idEndereco) {
-      return res.status(401).json({ error: "Endereço Inválido"})
-    }
+    const endereco = await prisma.endereco.findFirst({
+      where: {
+        OR: [
+          { id: idEndereco, idUsuario: idComprador || undefined },
+          { id: idEndereco, sessionId: sessionId || undefined }
+        ]
+      }
+    });
+    
+    if (!endereco) return res.status(400).json({ error: "Endereço inválido" });
 
     const carrinho = await prisma.carrinho.findMany({
       where: {
@@ -97,7 +101,7 @@ app.post('/pedidos', usuarioAutenticadoOpcional, garantirSessionId, async (req, 
 
     if (!carrinho.length) return res.status(400).json({ message: 'Carrinho vazio' });
 
-    // Validar estoque
+    
     for (const item of carrinho) {
       if (item.produto.qtdEstoque < item.quantidade) {
         return res.status(400).json({ message: `Produto ${item.produto.nome} sem estoque suficiente` });

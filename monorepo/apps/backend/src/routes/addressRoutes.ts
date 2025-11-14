@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { usuarioAutenticado } from "../middlewares/auth";
+import { garantirSessionId, usuarioAutenticado, usuarioAutenticadoOpcional } from "../middlewares/auth";
 import { Router, Request, Response } from "express";
 import { enderecoSchema } from "../../../../packages/shared/schemas/enderecos";
 
@@ -7,7 +7,7 @@ const router = Router();
 
 const prisma = new PrismaClient();
 
-router.post('/enderecos', usuarioAutenticado, async (req: Request, res: Response) => {
+router.post('/enderecos', usuarioAutenticadoOpcional, garantirSessionId, async (req: Request, res: Response) => {
   try {
     const parsedBody = enderecoSchema.safeParse(req.body);
     if (!parsedBody.success) {
@@ -16,6 +16,7 @@ router.post('/enderecos', usuarioAutenticado, async (req: Request, res: Response
 
     const { logradouro, numero, bairro, complemento, cidade, cep, estado, pontoReferencia } = parsedBody.data;
     const usuario = (req as any).usuario;
+    const sessionId = req.sessionId;
 
 
     const estadosValidos = [
@@ -53,11 +54,12 @@ router.post('/enderecos', usuarioAutenticado, async (req: Request, res: Response
         bairro,
         numero,
         pontoReferencia,
-        idUsuario: usuario.id
+        idUsuario: usuario?.id || null,
+        sessionId: usuario ? null : sessionId
       }
     })
 
-    return res.status(201).json({ message: 'Endereço cadastrado com sucesso!', endereco })
+    return res.status(201).json(endereco)
   } catch (error) {
     return res.status(500).json({ message: `Erro ao cadastrar endereço: ${error instanceof Error ? error.message : error}` });
   }

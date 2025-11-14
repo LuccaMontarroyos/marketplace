@@ -5,9 +5,9 @@ import { obterToken } from "@/utils/token";
 export async function buscarUsuarioPorId(id: number): Promise<Usuario> {
   const tokenSalvo = obterToken();
   const { data } = await api.get<Usuario>(`/usuarios/${id}`, {
-    headers: {
+    headers: tokenSalvo ? {
       Authorization: `Bearer ${tokenSalvo}`,
-    },
+    } : undefined,
   });
 
   return data;

@@ -21,6 +21,7 @@ export default function Card({ nome, idProduto, imagem, descricao, preco, onAddC
 
     
     try {
+      console.log("a porra ta caindo aqui");
       await adicionarAoCarrinho(idProduto, 1);
       if(onAddCarrinho) onAddCarrinho();
     } catch (error) {

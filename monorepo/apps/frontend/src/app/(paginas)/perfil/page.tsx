@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { IconEye, IconEyeOff, IconPencil } from "@tabler/icons-react";
-import { atualizarUsuario, trocarSenha } from "@/services/usuario";
+import { atualizarUsuario, buscarUsuarioPorId, trocarSenha } from "@/services/usuario";
 import { toast } from "react-toastify";
 
 export default function PerfilUsuario() {
@@ -36,25 +36,34 @@ export default function PerfilUsuario() {
 
     const [editando, setEditando] = useState(false);
     const [trocandoSenha, setTrocandoSenha] = useState(false);
+    const [carregando, setCarregando] = useState(true);
 
     useEffect(() => {
-        if (usuario) {
-            setDadosEditaveis({
-                nome: usuario.nome,
-                celular: usuario.celular,
-                email: usuario.email,
-                cpf: usuario.cpf,
-                fotoPerfil: usuario.fotoPerfil || "",
-            });
-        }
+        const carregarDados = async () => {
+            if (usuario) {
+                try {
+                    const dados = await buscarUsuarioPorId(usuario.id);
+                    setDadosEditaveis({
+                        nome: dados.nome,
+                        celular: dados.celular,
+                        email: dados.email,
+                        cpf: dados.cpf,
+                        fotoPerfil: dados.fotoPerfil || "",
+                    });
+                } catch (error) {
+                    toast.error(`Erro ao buscar dados do usuário: ${error}`);
+                } finally {
+                    setCarregando(false);
+                }
+            }
+        };
+        carregarDados();
     }, [usuario]);
 
-    if (!usuario) {
+    if (!usuario || carregando) {
         return (
-            <div className="bg-white h-lvh">
-                <p className="text-center text-black pt-10">
-                    Carregando informações do usuário...
-                </p>
+            <div className="bg-white h-lvh flex justify-center items-center">
+                <p className="text-black">Carregando informações do usuário...</p>
             </div>
         );
     }
@@ -108,7 +117,7 @@ export default function PerfilUsuario() {
 
     return (
         <div className="min-h-lvh bg-gray-100 text-black flex flex-col items-center pb-10 gap-1">
-            <LogoAlt botaoSair={true}/>
+            <LogoAlt botaoSair={true} />
             <div className="p-5 w-1/2 bg-white rounded-xl flex items-center justify-around mt-10">
                 <div className="relative w-[180px] h-[180px] rounded-full overflow-hidden border-verde group">
                     <label htmlFor="inputFoto" className="cursor-pointer">

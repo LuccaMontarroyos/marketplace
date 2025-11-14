@@ -48,16 +48,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const carregarUsuario = async () => {
       const tokenSalvo = obterToken();
-      console.log("Token salvo: ", tokenSalvo);
       if (tokenSalvo) {
         try {
           const decoded = jwtDecode<JwtPayload>(tokenSalvo);
-          console.log("Token decodado: ", decoded);
+
           const id = decoded.id;
 
           if (id) {
             const dados = await buscarUsuarioPorId(id);
-            console.log("Dados do usuário: ", dados);
             setUsuario(dados);
             salvarToken(tokenSalvo);
             setToken(tokenSalvo);

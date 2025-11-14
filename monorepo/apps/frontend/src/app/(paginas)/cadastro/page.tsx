@@ -9,7 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cadastrarUsuario } from "@/services/auth";
 import { useRouter, useSearchParams } from 'next/navigation';
-import { salvarToken } from "@/utils/token";
+import { useAuth } from "@/context/AuthContext";
 
 //TRECHO A SER IMPLEMENTADO NAS ROTAS QUE POSSAM DIRECIONAR PARA CÁ:
 /*import { useRouter } from 'next/router';
@@ -57,6 +57,7 @@ export default function FormularioDeCadastro() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const from = searchParams.get("from") || "/";
+    const { setToken } = useAuth();
 
     // const [redirectTo, setRedirectTo] = useState('/');
     const [preview, setPreview] = useState<string | null>(null);
@@ -102,7 +103,7 @@ export default function FormularioDeCadastro() {
             const resposta = await cadastrarUsuario(cadastroUsuario);
             console.log(resposta.token);
             if (resposta.token) {
-                salvarToken(resposta.token);
+                await setToken(resposta.token);
                 router.push(from);
             }
             alert("Usuário cadastrado com sucesso");

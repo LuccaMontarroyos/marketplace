@@ -9,6 +9,7 @@
     import { cadastrarProduto } from "@/services/produto";
     import { useRouter } from "next/navigation";
     import { toast } from "react-toastify";
+    import { criarContaStripe, gerarLinkOnBoarding } from "@/services/stripe";
 
     enum TipoProduto {
         ELETRONICOS = "Eletrônicos",
@@ -74,9 +75,37 @@
                 await cadastrarProduto(form);
                 toast.success("Produto criado com sucesso!");
                 router.push("/");
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Erro ao cadastrar:", error);
-                toast.error("Erro ao criar produto");
+                
+                // Verificar se o erro é relacionado à falta de conta Stripe
+                if (error.response?.status === 403 && error.response?.data?.erro === "Usuário não tem conta Stripe para vender.") {
+                    const criarConta = window.confirm(
+                        "Você precisa criar uma conta no Stripe para vender produtos. Deseja criar agora?"
+                    );
+                    
+                    if (criarConta) {
+                        try {
+                            // Tentar criar a conta Stripe
+                            await criarContaStripe().catch((err) => {
+                                if (err.response?.data?.erro === "Usuário já possui conta no Stripe.") {
+                                    console.log("Conta Stripe já existe, seguimos...");
+                                } else {
+                                    throw err;
+                                }
+                            });
+                            
+                            // Gerar link de onboarding
+                            const linkData = await gerarLinkOnBoarding();
+                            window.location.href = linkData.url;
+                        } catch (stripeError) {
+                            console.error("Erro ao criar conta Stripe:", stripeError);
+                            toast.error("Erro ao criar conta Stripe. Tente novamente.");
+                        }
+                    }
+                } else {
+                    toast.error("Erro ao criar produto");
+                }
             }
         }
         return (

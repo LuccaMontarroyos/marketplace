@@ -15,14 +15,14 @@ interface JwtPayload {
 type AuthContextType = {
   usuario: Usuario | null;
   token: string | null;
-  setToken: (token: string | null) => void;
+  setToken: (token: string | null) => Promise<void>;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
   usuario: null,
   token: null,
-  setToken: () => { },
+  setToken: async () => { },
   logout: () => { },
 });
 
@@ -31,10 +31,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
 
 
-  const atualizarToken = (novoToken: string | null) => {
+  const atualizarToken = async (novoToken: string | null) => {
     if (novoToken) {
       salvarToken(novoToken); // salva corretamente no cookie
       setToken(novoToken);
+      
+      // Buscar e atualizar dados do usuário
+      try {
+        const decoded = jwtDecode<JwtPayload>(novoToken);
+        const id = decoded.id;
+        
+        if (id) {
+          const dados = await buscarUsuarioPorId(id);
+          setUsuario(dados);
+        } else {
+          setUsuario(null);
+        }
+      } catch (error) {
+        console.log(`Erro ao buscar usuário pelo id: ${error}`);
+        setUsuario(null);
+      }
     } else {
       removerToken(); // remove corretamente do cookie
       setToken(null);

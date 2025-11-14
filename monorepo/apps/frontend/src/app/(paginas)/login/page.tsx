@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from 'react';
 import { loginUsuario } from "@/services/auth";
-import { salvarToken } from "@/utils/token";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Page() {
 
@@ -14,6 +14,7 @@ export default function Page() {
 
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { setToken } = useAuth();
 
     const handleLogin = async () => {
         if (!email || !senha) {
@@ -30,7 +31,7 @@ export default function Page() {
             console.log("resposta do login: ", resposta);
 
             if (resposta.token) {
-                salvarToken(resposta.token);
+                await setToken(resposta.token);
                 
                 const redirectTo = searchParams.get("from") || "/";
                 router.push(redirectTo);

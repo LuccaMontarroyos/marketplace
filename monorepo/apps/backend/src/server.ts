@@ -75,8 +75,6 @@ app.post('/pedidos', usuarioAutenticadoOpcional, garantirSessionId, async (req, 
       return res.status(400).json({ message: "Método de pagamento inválido" });
     }
 
-    // Buscar carrinho
-
     
     const endereco = await prisma.endereco.findFirst({
       where: {
@@ -133,7 +131,6 @@ app.post('/pedidos', usuarioAutenticadoOpcional, garantirSessionId, async (req, 
       }
     });
 
-    // Criar os itens do pedido
     await prisma.pedidoProduto.createMany({
       data: carrinho.map(item => ({
         idPedido: pedido.id,
@@ -178,114 +175,6 @@ app.post('/pedidos', usuarioAutenticadoOpcional, garantirSessionId, async (req, 
     return res.status(500).json({ message: error.message || 'Erro ao criar pedido' });
   }
 });
-
-
-// app.post('/pedidos', usuarioAutenticadoOpcional, async (req: Request, res: Response) => {
-//   try {
-//     const { idEndereco, sessionId, tipoEnvio, metodoPagamento } = req.body;
-
-//     const idComprador = (req as any).usuario?.id;
-
-//     if (!idComprador && !sessionId) {
-//       return res.status(400).json({ message: 'Usuário não autenticado e sem sessionId válido' });
-//     }
-
-//     const whereClause: any = {};
-//     if (idComprador) whereClause.idUsuario = idComprador;
-//     if (sessionId) whereClause.sessionId = sessionId;
-
-//     let diasEntrega = 12;
-//     if (tipoEnvio === 'expresso') {
-//       diasEntrega = 5
-//     }
-
-//     if (!metodoPagamento) {
-//       return res.status(400).json({ message: "O método do pagamento é obrigatório" });
-//     }
-
-//     const carrinho = await prisma.carrinho.findMany({
-//       where: whereClause,
-//       include: { produto: true }
-//     });
-
-//     if (!carrinho.length) {
-//       return res.status(400).json({ message: 'Carrinho vazio' });
-//     }
-
-//     const produtos = await prisma.produto.findMany({
-//       where: { id: { in: carrinho.map((item) => item.idProduto) } }
-//     });
-
-//     for (const item of carrinho) {
-//       const produto = produtos.find(p => p.id === item.idProduto);
-//       if (!produto || produto.qtdEstoque < item.quantidade) {
-//         return res.status(400).json({ message: `Produto ${produto?.nome || item.idProduto} sem estoque suficiente` });
-//       }
-//     }
-
-
-//     const pedido = await prisma.pedido.create({
-//       data: {
-//         dataEntregaEstimada: new Date(Date.now() + diasEntrega * 24 * 60 * 60 * 1000),
-//         status: "PENDENTE",
-//         idComprador: idComprador || null,
-//         sessionId: sessionId || null,
-//         idEnderecoEntrega: idEndereco
-//       }
-//     });
-
-//     const valorTotal = carrinho.reduce((acc, item) => acc + item.precoAtual.toNumber() * item.quantidade, 0);
-
-
-//     const pagamento = await prisma.pagamento.create({
-//       data: {
-//         idPedido: pedido.id,
-//         valor: valorTotal,
-//         metodoPagamento,
-//         status: 'PENDENTE',
-//         idUsuario: idComprador || null
-//       }
-//     });
-
-//     await prisma.pedidoProduto.createMany({
-//       data: carrinho.map((item) => ({
-//         idPedido: pedido.id,
-//         idProduto: item.idProduto,
-//         quantidade: item.quantidade,
-//         precoUnitario: item.precoAtual
-//       })),
-//     });
-
-//     for (const item of carrinho) {
-//       await prisma.produto.update({
-//         where: { id: item.idProduto },
-//         data: { qtdEstoque: { decrement: item.quantidade } }
-//       });
-//     }
-
-
-//     await prisma.carrinho.deleteMany({
-//       where: {
-//         OR: [
-//           { idUsuario: idComprador ? idComprador : undefined },
-//           { sessionId: sessionId ? sessionId : undefined }
-//         ]
-//       }
-//     });
-
-//     return res.status(201).json({
-//       message: 'Pedido criado com sucesso! Prossiga com o pagamento.',
-//       pedidoId: pedido.id,
-//       pagamentoId: pagamento.id,
-//       valorTotal,
-//       metodoPagamento,
-//       prazoDeEntrega: `O prazo de entrega é em ${diasEntrega} dias`,
-//       paymentUrl // URL mockada para simular integração
-//     });
-//   } catch (error) {
-//     return res.status(500).json({ message: error instanceof Error ? error.message : `Erro ao fazer pedido: ${error}` });
-//   }
-// });
 
 app.post('/pedidos/refazer', usuarioAutenticado, async (req: Request, res: Response) => {
   const idPedido = Number(req.body.idPedido);
@@ -333,7 +222,6 @@ app.post('/pedidos/refazer', usuarioAutenticado, async (req: Request, res: Respo
   }
 });
 
-// GET /stripe/account-status
 app.get("/stripe/account-status", usuarioAutenticado, async (req, res) => {
   try {
     const user = (req as any).usuario;
@@ -354,7 +242,6 @@ app.get("/stripe/account-status", usuarioAutenticado, async (req, res) => {
   }
 });
 
-// GET /stripe/payouts
 app.get("/stripe/payouts", usuarioAutenticado, async (req, res) => {
   try {
     const user = (req as any).usuario;
@@ -405,7 +292,6 @@ app.get('/pedidos/comprador', usuarioAutenticado, async (req: Request, res: Resp
   }
 });
 
-// GET /pedidos/vendedor
 app.get("/pedidos/vendedor", usuarioAutenticado, async (req: Request, res: Response) => {
   try {
     const usuarioId = (req as any).usuario.id;
@@ -446,7 +332,6 @@ app.get("/pedidos/vendedor", usuarioAutenticado, async (req: Request, res: Respo
   }
 });
 
-// GET /pedidos/:id
 app.get("/pedidos/:id", usuarioAutenticado, async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
@@ -724,7 +609,6 @@ app.delete('/admin/usuarios/:id', isAdminMiddleware, async (req: Request, res: R
   }
 })
 
-// Rota para visualizar o pagamento de um pedido
 app.get('/pagamentos/:idPedido', usuarioAutenticado, async (req: Request, res: Response) => {
   const idPedido = Number(req.params.idPedido);
   const usuario = (req as any).usuario;
@@ -752,7 +636,6 @@ app.get('/pagamentos/:idPedido', usuarioAutenticado, async (req: Request, res: R
 });
 
 
-// ✅ Atualização automática do status do pedido após pagamento
 app.post('/pagamentos', usuarioAutenticado, async (req: Request, res: Response) => {
   try {
     const { idPedido, valor, metodoPagamento } = req.body;
@@ -792,7 +675,6 @@ app.post('/pagamentos', usuarioAutenticado, async (req: Request, res: Response) 
 });
 
 
-// ✅ Permitir que o vendedor atualize o status do pedido se o pedido for de um produto dele
 app.put('/pedidos/:id', usuarioAutenticado, async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (isNaN(id)) {
@@ -837,7 +719,6 @@ app.put('/pedidos/:id', usuarioAutenticado, async (req: Request, res: Response) 
 });
 
 
-// ✅ Rota para vendedor listar apenas pedidos pagos dos seus produtos
 app.get('/pedidos/vendedor', usuarioAutenticado, async (req: Request, res: Response) => {
   const usuario = (req as any).usuario;
 
@@ -868,16 +749,15 @@ app.get('/pedidos/vendedor', usuarioAutenticado, async (req: Request, res: Respo
 
 export async function criarContaConnect(usuarioId: number) {
   const account = await stripe.accounts.create({
-    type: 'express', // para fluxo simples
+    type: 'express',
     country: 'BR',
     capabilities: {
       card_payments: { requested: true },
       transfers: { requested: true },
     },
-    business_type: 'individual', // pode ser company
+    business_type: 'individual',
   });
 
-  // salvar no banco
   await prisma.usuario.update({
     where: { id: usuarioId },
     data: { stripeAccountId: account.id }
@@ -900,5 +780,5 @@ export async function gerarLinkOnboarding(accountId: string) {
 
 
 app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+  
 });

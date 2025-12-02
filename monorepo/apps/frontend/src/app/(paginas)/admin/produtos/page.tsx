@@ -86,7 +86,7 @@ export default function AdminProdutosPage() {
             return (
               <div
                 key={produto.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full"
               >
                 <div className="relative h-48 w-full">
                   <Image
@@ -97,11 +97,11 @@ export default function AdminProdutosPage() {
                     unoptimized
                   />
                 </div>
-                <div className="p-4">
+                <div className="p-4 flex flex-col gap-3 flex-1">
                   <h3 className="text-lg font-semibold texto-azul mb-2 line-clamp-2">
                     {produto.nome}
                   </h3>
-                  <p className="text-sm texto-azul opacity-70 mb-2 line-clamp-2">
+                  <p className="text-sm texto-azul opacity-70 line-clamp-2 flex-grow">
                     {produto.descricao}
                   </p>
                   <div className="flex items-center justify-between mb-3">
@@ -117,7 +117,7 @@ export default function AdminProdutosPage() {
                       Cadastrado em: {format(new Date(produto.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-auto">
                     <Link
                       href={`/produto/${produto.id}`}
                       className="flex-1 botao-verde px-4 py-2 rounded-lg text-white text-center text-sm"

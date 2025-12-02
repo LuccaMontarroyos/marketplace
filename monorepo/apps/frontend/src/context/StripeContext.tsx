@@ -9,12 +9,12 @@ export default function StripeRedirectHandler() {
 
     useEffect(() => {
         if (pathname.startsWith("/stripe/onboarding/sucesso")) {
-            router.replace("/cadastro/produto"); // redireciona
+            router.replace("/cadastro/produto");
         } else if (pathname.startsWith("/stripe/onboarding/erro")) {
             alert("Houve um problema no onboarding do Stripe. Tente novamente.");
-            router.replace("/perfil"); // redireciona para página segura
+            router.replace("/perfil");
         }
     }, [pathname]);
 
-    return null; // não renderiza nada
+    return null;
 }

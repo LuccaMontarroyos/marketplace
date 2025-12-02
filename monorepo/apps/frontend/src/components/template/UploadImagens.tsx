@@ -11,13 +11,12 @@ export interface UploadImagensProps {
 
 export default function UploadImagens({ value = [], onChangeImagens }: UploadImagensProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // const [imagens, setImagens] = useState<string[]>([]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const novosArquivos = Array.from(files).slice(0, 6 - value.length); // limita no máximo 6
+    const novosArquivos = Array.from(files).slice(0, 6 - value.length);
     onChangeImagens([...value, ...novosArquivos]);
 
     event.target.value = "";
@@ -26,7 +25,6 @@ export default function UploadImagens({ value = [], onChangeImagens }: UploadIma
   const removerImagem = (index: number) => {
     const novas = value.filter((_, i) => i !== index);
     onChangeImagens(novas);
-    // setImagens((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleUploadClick = () => {

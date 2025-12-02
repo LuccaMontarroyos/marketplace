@@ -15,10 +15,6 @@ export const produtoSchema = z.object({
         .refine((val) => Number.isInteger(val) && val >= 1, {
             message: "Estoque mínimo de 1 unidade"
         }),
-    //   imagens: z.array(z.string().refine(val => val.startsWith('http') || val.startsWith('blob:'), {
-    //   message: 'URL da imagem inválida',
-    // })).max(6),
-
 });
 
 export const cadastroProdutoSchema = z.object({

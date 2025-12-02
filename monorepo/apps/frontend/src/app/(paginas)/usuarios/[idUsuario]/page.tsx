@@ -7,10 +7,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Page() {
     const params = useParams();
     const idUsuario = params.idUsuario;
+    const { usuario: usuarioLogado } = useAuth();
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [carregando, setCarregando] = useState(true);
 
@@ -56,16 +58,23 @@ export default function Page() {
                     <p className="text-xl font-semibold texto-verde">{usuario.nome}</p>
                     <p>{usuario.celular}</p>
                     <p>{usuario.email}</p>
-                    <p className="text-gray-400">Usuário desde {new Date(usuario.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                    <p className="texto-azul opacity-70">Usuário desde {new Date(usuario.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}</p>
                 </div>
             </div>
             <div className="p-15 w-full bg-white rounded-xl">
                 <div className="flex justify-between">
                     <h2 className="text-xl font-semibold texto-verde">Produtos do usuário</h2>
-                    <Link href={`/mensagens/${idUsuario}`} className="botao-verde text-xl">Enviar Mensagem </Link>
+                    {usuarioLogado && usuarioLogado.id !== Number(idUsuario) && (
+                        <Link
+                            href={`/mensagens/${idUsuario}?nome=${encodeURIComponent(usuario.nome)}&foto=${encodeURIComponent(usuario.fotoPerfil || "/icone-perfil.png")}`}
+                            className="botao-verde text-xl px-4 py-2 rounded-lg text-white"
+                        >
+                            Enviar Mensagem
+                        </Link>
+                    )}
                 </div>
                 <div className="px-15">
-                    <CardSection idUsuario={Number(idUsuario)}/>
+                    <CardSection idUsuario={Number(idUsuario)} />
                 </div>
             </div>
         </div>

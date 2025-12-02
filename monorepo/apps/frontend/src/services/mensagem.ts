@@ -72,3 +72,16 @@ export async function excluirMensagem(id: number) {
   return response.data;
 }
 
+export async function buscarConversa(idOutroUsuario: number): Promise<Mensagem[]> {
+  const token = obterToken();
+  const response = await api.get<{ mensagens: Mensagem[] }>(
+    `/mensagens/conversa/${idOutroUsuario}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data.mensagens;
+}
+

@@ -11,15 +11,6 @@ import { cadastrarUsuario } from "@/services/auth";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
 
-//TRECHO A SER IMPLEMENTADO NAS ROTAS QUE POSSAM DIRECIONAR PARA CÁ:
-/*import { useRouter } from 'next/router';
-
-const router = useRouter();
-
-const irParaCadastro = () => {
-  router.push(`/cadastro?from=${encodeURIComponent(router.asPath)}`);
-};*/
-
 
 const usuarioSchema = z.object({
     nome: z.string().min(1, "Nome é obrigatório").regex(/^[^\d]*$/, "O nome não pode conter números"),
@@ -59,7 +50,6 @@ export default function FormularioDeCadastro() {
     const from = searchParams.get("from") || "/";
     const { setToken } = useAuth();
 
-    // const [redirectTo, setRedirectTo] = useState('/');
     const [preview, setPreview] = useState<string | null>(null);
     const [cameraAtiva, setCameraAtiva] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -101,7 +91,6 @@ export default function FormularioDeCadastro() {
 
         try {
             const resposta = await cadastrarUsuario(cadastroUsuario);
-            console.log(resposta.token);
             if (resposta.token) {
                 await setToken(resposta.token);
                 router.push(from);
@@ -109,7 +98,6 @@ export default function FormularioDeCadastro() {
             alert("Usuário cadastrado com sucesso");
             setPreview(null);
         } catch (error) {
-            console.log("Erro no cadastro:", error);
             alert("Erro ao cadastrar usuário. Tente novamente.");
         }
 
@@ -151,7 +139,7 @@ export default function FormularioDeCadastro() {
                         dt.items.add(file);
                         setValue("imagem", dt.files);
                         setPreview(URL.createObjectURL(file));
-                        desligarCamera(); // desliga a câmera depois da foto
+                        desligarCamera();
                     }
                 }, "image/jpeg");
             }

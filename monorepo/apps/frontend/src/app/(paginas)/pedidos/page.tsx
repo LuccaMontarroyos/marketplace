@@ -65,19 +65,19 @@ export default function PedidosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Carregando pedidos...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-xl texto-azul">Carregando pedidos...</p>
       </div>
     );
   }
 
   if (pedidos.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-10">
-        <IconPackage size={80} className="text-gray-400 mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Nenhum pedido encontrado</h2>
-        <p className="text-gray-600 mb-6">Você ainda não fez nenhum pedido</p>
-        <Link href="/" className="botao-verde px-6 py-2 rounded-lg">
+      <div className="min-h-screen flex flex-col items-center justify-center p-10 bg-gray-50">
+        <IconPackage size={80} className="texto-verde mb-4" />
+        <h2 className="text-2xl font-semibold mb-2 texto-azul">Nenhum pedido encontrado</h2>
+        <p className="texto-azul opacity-70 mb-6 text-center">Você ainda não fez nenhum pedido</p>
+        <Link href="/" className="botao-verde px-6 py-2 rounded-lg text-white">
           Explorar produtos
         </Link>
       </div>
@@ -87,7 +87,7 @@ export default function PedidosPage() {
   return (
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Meus Pedidos</h1>
+        <h1 className="text-3xl font-bold mb-6 texto-azul">Meus Pedidos</h1>
         <div className="space-y-4">
           {pedidos.map((pedido) => {
             const valorTotal = pedido.PedidoProduto.reduce(
@@ -99,14 +99,14 @@ export default function PedidosPage() {
             return (
               <div
                 key={pedido.id}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-lg transition-shadow flex flex-col gap-4"
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start flex-wrap gap-4">
                   <div>
-                    <h3 className="text-xl font-semibold mb-2">
+                    <h3 className="text-xl font-semibold mb-2 texto-azul">
                       Pedido #{pedido.id}
                     </h3>
-                    <p className="text-gray-600 text-sm">
+                    <p className="texto-azul opacity-70 text-sm">
                       Data: {format(new Date(pedido.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                     </p>
                   </div>
@@ -122,13 +122,13 @@ export default function PedidosPage() {
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <h4 className="font-semibold mb-2">Produtos:</h4>
+                <div className="mb-2">
+                  <h4 className="font-semibold mb-2 texto-azul">Produtos:</h4>
                   <div className="space-y-2">
                     {pedido.PedidoProduto.map((item) => (
                       <div
                         key={item.id}
-                        className="flex justify-between text-sm"
+                        className="flex justify-between text-sm texto-azul"
                       >
                         <span>
                           {item.produto?.nome || "Produto"} x {item.quantidade}
@@ -141,9 +141,9 @@ export default function PedidosPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-4 border-t">
-                  <div>
-                    <p className="text-sm text-gray-600">
+                <div className="flex justify-between items-center pt-4 border-t flex-col gap-4 md:flex-row">
+                  <div className="w-full md:w-auto">
+                    <p className="text-sm texto-azul">
                       Entrega estimada:{" "}
                       {format(
                         new Date(pedido.dataEntregaEstimada),
@@ -152,13 +152,13 @@ export default function PedidosPage() {
                       )}
                     </p>
                     {pagamento && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm texto-azul">
                         Pagamento: {pagamento.metodoPagamento} -{" "}
                         {pagamento.status}
                       </p>
                     )}
                   </div>
-                  <div className="text-right">
+                  <div className="text-right w-full md:w-auto">
                     <p className="text-2xl font-bold texto-verde">
                       R$ {valorTotal.toFixed(2)}
                     </p>

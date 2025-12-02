@@ -74,7 +74,7 @@ router.post('/produtos', usuarioAutenticado, upload.array('imagens', 6), async (
       dataProduto.imagens = {
         create: arquivos.map((file, index) => ({
           url: `/uploads/${file.filename}`,
-          ordem: parseInt(ordensArray[index]) || index + 1 // fallback para index
+          ordem: parseInt(ordensArray[index]) || index + 1
         }))
       };
     }

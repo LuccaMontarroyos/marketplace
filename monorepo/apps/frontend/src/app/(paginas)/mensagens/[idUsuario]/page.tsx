@@ -1,189 +1,157 @@
-// "use client";
-// import { useState, useEffect } from "react";
-// import { useParams } from "next/navigation";
-
-// interface Mensagem {
-//   id: number;
-//   conteudo: string;
-//   remetenteId: number;
-//   destinatarioId: number;
-//   criadoEm: string;
-// }
-
-// export default function TelaDeMensagens() {
-//   const params = useParams();
-//   const idOutroUsuario = Number(params.idOutroUsuario);
-//   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
-//   const [novaMensagem, setNovaMensagem] = useState("");
-
-//   // Suponha que esse é o ID do usuário logado
-//   const idUsuarioLogado = 1;
-
-//   const carregarMensagens = async () => {
-//     const res = await fetch(`http://localhost:3001/mensagens/${idUsuarioLogado}/${idOutroUsuario}`);
-//     const data = await res.json();
-//     setMensagens(data);
-//   };
-
-//   const enviarMensagem = async () => {
-//     if (!novaMensagem.trim()) return;
-
-//     await fetch("http://localhost:3001/mensagens", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         remetenteId: idUsuarioLogado,
-//         destinatarioId: idOutroUsuario,
-//         conteudo: novaMensagem,
-//       }),
-//     });
-
-//     setNovaMensagem("");
-//     carregarMensagens(); // Atualiza a lista
-//   };
-
-//   useEffect(() => {
-//     carregarMensagens();
-//     const interval = setInterval(carregarMensagens, 3000); // polling simples
-//     return () => clearInterval(interval);
-//   }, []);
-
-//   return (
-//     <div className="max-w-2xl mx-auto p-4 flex flex-col gap-4">
-//       <div className="bg-gray-100 rounded-lg p-4 h-[500px] overflow-y-auto flex flex-col gap-2">
-//         {mensagens.map((msg) => (
-//           <div
-//             key={msg.id}
-//             className={`p-2 rounded-md max-w-[70%] ${
-//               msg.remetenteId === idUsuarioLogado
-//                 ? "bg-blue-500 text-white self-end"
-//                 : "bg-gray-300 self-start"
-//             }`}
-//           >
-//             {msg.conteudo}
-//           </div>
-//         ))}
-//       </div>
-
-//       <div className="flex gap-2">
-//         <input
-//           type="text"
-//           className="flex-1 border rounded-md p-2"
-//           placeholder="Digite sua mensagem..."
-//           value={novaMensagem}
-//           onChange={(e) => setNovaMensagem(e.target.value)}
-//         />
-//         <button
-//           onClick={enviarMensagem}
-//           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-//         >
-//           Enviar
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
 "use client";
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-
-interface Mensagem {
-  id: number;
-  conteudo: string;
-  remetenteId: number;
-  destinatarioId: number;
-  criadoEm: string;
-}
+import { Send } from "lucide-react";
+import { buscarConversa, enviarMensagem, Mensagem, DadosMensagem } from "@/services/mensagem";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "react-toastify";
 
 export default function TelaDeMensagens() {
   const params = useParams();
-  const idOutroUsuario = Number(params.idOutroUsuario ?? 2);
-  const idUsuarioLogado = 1;
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { usuario } = useAuth();
 
-  const [mensagens, setMensagens] = useState<Mensagem[]>([
-    {
-      id: 1,
-      conteudo: "Oi! Tudo bem?",
-      remetenteId: 2,
-      destinatarioId: 1,
-      criadoEm: "2025-05-08T10:00:00Z",
-    },
-    {
-      id: 2,
-      conteudo: "Tudo ótimo, e você?",
-      remetenteId: 1,
-      destinatarioId: 2,
-      criadoEm: "2025-05-08T10:01:00Z",
-    },
-    {
-      id: 3,
-      conteudo: "Tô bem também! Você viu meu novo produto?",
-      remetenteId: 2,
-      destinatarioId: 1,
-      criadoEm: "2025-05-08T10:02:00Z",
-    },
-  ]);
+  const idOutroUsuario = Number(params.idUsuario);
+  const idUsuarioLogado = usuario?.id;
 
+  const nomeDestinatario = searchParams.get("nome") || "Usuário";
+  const fotoDestinatario = searchParams.get("foto") || "/icone-perfil.png";
+
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [novaMensagem, setNovaMensagem] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [enviando, setEnviando] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const enviarMensagem = () => {
-    if (!novaMensagem.trim()) return;
+  useEffect(() => {
+    if (!usuario) {
+      router.push("/login");
+      return;
+    }
 
-    const nova: Mensagem = {
-      id: mensagens.length + 1,
-      conteudo: novaMensagem,
-      remetenteId: idUsuarioLogado,
-      destinatarioId: idOutroUsuario,
-      criadoEm: new Date().toISOString(),
+    const carregarMensagens = async () => {
+      if (!idOutroUsuario) return;
+      try {
+        const data = await buscarConversa(idOutroUsuario);
+        setMensagens(data);
+      } catch (error) {
+        console.error("Erro ao carregar mensagens:", error);
+      } finally {
+        setCarregando(false);
+      }
     };
 
-    setMensagens((prev) => [...prev, nova]);
-    setNovaMensagem("");
+    carregarMensagens();
+
+    const interval = setInterval(carregarMensagens, 5000);
+    return () => clearInterval(interval);
+  }, [idOutroUsuario, usuario, router]);
+
+  const rolarParaBaixo = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    rolarParaBaixo();
+  }, [mensagens]);
+
+  const handleEnviarMensagem = async () => {
+    if (!novaMensagem.trim() || !idUsuarioLogado) return;
+
+    const dados: DadosMensagem = {
+      idUsuarioReceptor: idOutroUsuario,
+      mensagem: novaMensagem,
+    };
+
+    try {
+      setEnviando(true);
+      const msgTemporaria: Mensagem = {
+        id: Math.random(),
+        idUsuarioEmissor: idUsuarioLogado,
+        idUsuarioReceptor: idOutroUsuario,
+        mensagem: novaMensagem,
+        dataEnvio: new Date(),
+      };
+      
+      setMensagens((prev) => [...prev, msgTemporaria]);
+      setNovaMensagem(""); 
+
+      await enviarMensagem(dados);
+    } catch (error) {
+      console.error("Erro ao enviar mensagem:", error);
+      toast.error("Não foi possível enviar sua mensagem.");
+      setMensagens((prev) => prev.slice(0, -1));
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
-    <div className="bg-gray-200">
-      <header className="bg-white py-5 pl-10 flex gap-5 items-center">
-        <div>
-        <div className="w-[70px] h-[70px] rounded-full overflow-hidden border-verde">
-          <Image src={"/foto-perfil.jpg"} alt={"Foto de perfil do usuário"} width={50} height={50} className="object-cover w-full h-full" />
-        </div>
-        <p className="texto-azul text-lg font-semibold">Nome do meliante</p>
-        </div>
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100">
+
+      <header className="bg-white px-4 md:px-8 py-4 flex gap-3 items-center shadow-md z-10 sticky top-0">
+        <Image
+          src={fotoDestinatario}
+          alt={`Foto de ${nomeDestinatario}`}
+          width={48}
+          height={48}
+          className="object-cover w-12 h-12 rounded-full"
+        />
+        <p className="font-semibold text-lg texto-azul">{nomeDestinatario}</p>
       </header>
-      <div className="max-w-2xl mx-auto p-4 flex flex-col gap-4 ">
-        <div className="bg-gray-100 rounded-lg p-4 h-[500px] overflow-y-auto flex flex-col gap-2">
-          {mensagens.map((msg) => (
+
+      <main className="flex-1 overflow-y-auto px-4 md:px-16 py-6 space-y-4">
+        {carregando && <p className="text-center texto-azul opacity-70">Carregando mensagens...</p>}
+
+        {!carregando && mensagens.length === 0 && (
+          <p className="text-center texto-azul opacity-70">Envie a primeira mensagem!</p>
+        )}
+
+        {mensagens.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.idUsuarioEmissor === idUsuarioLogado ? "justify-end" : "justify-start"}`}
+          >
             <div
-              key={msg.id}
-              className={`p-2 rounded-md max-w-[70%] ${msg.remetenteId === idUsuarioLogado
-                ? "bg-azul text-white self-end"
-                : "bg-gray-400 self-start"
+              className={`p-3 rounded-2xl max-w-[75%] shadow-sm ${msg.idUsuarioEmissor === idUsuarioLogado
+                  ? "bg-verde text-white rounded-br-none"
+                  : "bg-white texto-azul rounded-bl-none border border-gray-100"
                 }`}
             >
-              {msg.conteudo}
+              {msg.mensagem}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
-        <div className="flex gap-2">
+        <div ref={messagesEndRef} />
+      </main>
+
+      <footer className="bg-white px-4 md:px-16 py-4 shadow-inner sticky bottom-0">
+        <div className="flex gap-3 items-center">
           <input
             type="text"
-            className="flex-1 border rounded-md p-2 bg-white"
+            className="flex-1 border-none rounded-full py-3 px-5 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-verde texto-azul placeholder:text-gray-400"
             placeholder="Digite sua mensagem..."
             value={novaMensagem}
             onChange={(e) => setNovaMensagem(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleEnviarMensagem();
+              }
+            }}
           />
           <button
-            onClick={enviarMensagem}
-            className="add-carrinho text-white px-4 py-2 rounded"
+            onClick={handleEnviarMensagem}
+            disabled={enviando || !novaMensagem.trim()}
+            className="bg-verde text-white rounded-full p-3 hover:bg-azul transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Enviar
+            <Send size={22} />
           </button>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }

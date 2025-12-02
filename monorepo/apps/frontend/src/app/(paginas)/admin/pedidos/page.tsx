@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import LogoAlt from "@/components/template/LogoAlt";
-import { buscarPedidosDoComprador, Pedido } from "@/services/pedido";
+import { buscarPedidosAdmin, Pedido } from "@/services/pedido";
 import { toast } from "react-toastify";
 import { IconPackage, IconTruck, IconCheck, IconX, IconEye } from "@tabler/icons-react";
 import { format } from "date-fns";
@@ -31,9 +31,7 @@ export default function AdminPedidosPage() {
   const carregarPedidos = async () => {
     try {
       setLoading(true);
-      // Como admin, podemos buscar todos os pedidos
-      // Por enquanto, vamos usar a mesma função, mas idealmente deveria ter uma rota específica
-      const dados = await buscarPedidosDoComprador();
+      const dados = await buscarPedidosAdmin();
       setPedidos(dados);
     } catch (error: any) {
       toast.error("Erro ao carregar pedidos");
@@ -137,11 +135,12 @@ export default function AdminPedidosPage() {
                     <p className="text-sm texto-azul">
                       Data: {format(new Date(pedido.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                     </p>
-                    {pedido.comprador && (
-                      <p className="text-sm texto-azul">
-                        Cliente: {pedido.comprador.nome} ({pedido.comprador.email})
-                      </p>
-                    )}
+                    <p className="text-sm texto-azul">
+                      Cliente:{" "}
+                      {pedido.comprador?.nome
+                        ? `${pedido.comprador.nome} (${pedido.comprador.email})`
+                        : `ID ${pedido.idComprador ?? "N/D"}`}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(pedido.status)}
@@ -196,7 +195,7 @@ export default function AdminPedidosPage() {
                     </p>
                     <Link
                       href={`/pedidos/${pedido.id}`}
-                      className="botao-verde px-4 py-2 rounded-lg text-white text-sm inline-flex items-center gap-2"
+                      className="botao-verde px-5 py-2 rounded-lg text-white text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
                     >
                       <IconEye size={18} />
                       Ver detalhes

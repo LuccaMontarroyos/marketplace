@@ -1,5 +1,3 @@
-// src/router/striperouter
-// .ts
 import { Router, Request, Response } from "express";
 import Stripe from "stripe";
 import { usuarioAutenticado } from "../middlewares/auth";
@@ -12,9 +10,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 const router = Router();
 
-/**
- * 1️⃣ Criar conta Stripe Connect para o usuário autenticado
- */
 router.post("/account", usuarioAutenticado, async (req: Request, res: Response) => {
   try {
     const usuarioId = (req as any).usuario.id;
@@ -31,10 +26,9 @@ router.post("/account", usuarioAutenticado, async (req: Request, res: Response) 
       return res.status(400).json({ erro: "Usuário já possui conta no Stripe." });
     }
 
-    // Criar conta no Stripe
     const account = await stripe.accounts.create({
       type: "express",
-      country: "BR", // Brasil
+      country: "BR",
       email: usuario.email,
       capabilities: {
         card_payments: { requested: true },
@@ -42,7 +36,6 @@ router.post("/account", usuarioAutenticado, async (req: Request, res: Response) 
       }
     });
 
-    // Salvar ID no banco
     await prisma.usuario.update({
       where: { id: usuarioId },
       data: { stripeAccountId: account.id, isVendedor: true }
@@ -55,9 +48,6 @@ router.post("/account", usuarioAutenticado, async (req: Request, res: Response) 
   }
 });
 
-/**
- * 2️⃣ Gerar link de onboarding para o vendedor finalizar cadastro no Stripe
- */
 router.get("/account-link", usuarioAutenticado, async (req: Request, res: Response) => {
   try {
     const usuarioId = (req as any).usuario.id;
@@ -72,8 +62,8 @@ router.get("/account-link", usuarioAutenticado, async (req: Request, res: Respon
 
     const accountLink = await stripe.accountLinks.create({
       account: usuario.stripeAccountId,
-      refresh_url: `${process.env.FRONTEND_URL}/stripe/onboarding/erro`, // URL para caso o vendedor interrompa o cadastro
-      return_url: `${process.env.FRONTEND_URL}/stripe/onboarding/sucesso`, // URL após finalizar o cadastro
+      refresh_url: `${process.env.FRONTEND_URL}/stripe/onboarding/erro`,
+      return_url: `${process.env.FRONTEND_URL}/stripe/onboarding/sucesso`,
       type: "account_onboarding"
     });
 
@@ -104,7 +94,6 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Garante que o pagamento foi liquidado (especialmente p/ métodos assíncronos)
         if (session.payment_status !== "paid") {
           return res.json({ received: true });
         }
@@ -120,22 +109,18 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
           });
           if (!pedido) throw new Error("Pedido não encontrado");
 
-          // Idempotência: se já marcado como PAGO, não repete efeitos
           if (pedido.status === "PAGO") return;
 
-          // Atualiza pagamentos -> PAGO
           await tx.pagamento.updateMany({
             where: { idPedido: pedido.id },
             data: { status: "PAGO" }
           });
 
-          // Atualiza pedido -> PAGO
           await tx.pedido.update({
             where: { id: pedido.id },
             data: { status: "PAGO" }
           });
 
-          // Decrementa estoque
           for (const item of pedido.PedidoProduto) {
             await tx.produto.update({
               where: { id: item.idProduto },
@@ -143,7 +128,6 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
             });
           }
 
-          // Limpa carrinho desse comprador/sessão
           await tx.carrinho.deleteMany({
             where: {
               OR: [
@@ -159,7 +143,6 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
       case "checkout.session.expired":
       case "payment_intent.payment_failed": {
-        // Marca pagamentos como CANCELADO; Pedido permanece PENDENTE (não existe CANCELADO no enum)
         const session = event.data.object as Stripe.Checkout.Session;
         const pedidoIdStr = session.metadata?.pedidoId;
         if (pedidoIdStr) {
@@ -167,13 +150,11 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
             where: { idPedido: Number(pedidoIdStr) },
             data: { status: "CANCELADO" }
           });
-          // opcional: manter pedido como PENDENTE; política de negócio pode removê-lo via job/endpoint
         }
         break;
       }
 
       default:
-        // Outros eventos podem ser logados se quiser
         break;
     }
 

@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { IconEye, IconEyeOff, IconPencil, IconUser, IconHeart, IconPackage, IconShoppingBag } from "@tabler/icons-react";
 import { atualizarUsuario, buscarUsuarioPorId, trocarSenha } from "@/services/usuario";
+import { criarContaStripe, gerarLinkOnBoarding } from "@/services/stripe";
 import { toast } from "react-toastify";
 import FavoritosSection from "@/components/template/FavoritosSection";
 import PedidosSection from "@/components/template/PedidosSection";
@@ -40,6 +41,27 @@ export default function PerfilUsuario() {
     const [editando, setEditando] = useState(false);
     const [trocandoSenha, setTrocandoSenha] = useState(false);
     const [carregando, setCarregando] = useState(true);
+    const [criandoContaStripe, setCriandoContaStripe] = useState(false);
+    const handleTornarVendedor = async () => {
+        try {
+            setCriandoContaStripe(true);
+            await criarContaStripe().catch((err) => {
+                if (err.response?.data?.erro === "Usuário já possui conta no Stripe.") {
+                    console.log("Conta Stripe já existe, redirecionando...");
+                } else {
+                    throw err;
+                }
+            });
+
+            const linkData = await gerarLinkOnBoarding();
+            window.location.href = linkData.url;
+        } catch (error) {
+            console.error("Erro ao tentar criar conta Stripe", error);
+            toast.error("Não foi possível iniciar o onboarding no momento.");
+        } finally {
+            setCriandoContaStripe(false);
+        }
+    };
     const [abaAtiva, setAbaAtiva] = useState<"perfil" | "favoritos" | "pedidos" | "pedidosVendedor">("perfil");
 
     useEffect(() => {
@@ -281,7 +303,7 @@ export default function PerfilUsuario() {
                                 <p className="texto-azul">{usuario.email}</p>
                                 <p className="texto-azul">{usuario.cpf}</p>
                             </div>
-                            <div className="flex w-full justify-between gap-4">
+                            <div className="flex w-full flex-wrap justify-between gap-4">
                                 <button
                                     className={`botao-verde ${trocandoSenha ? "opacity-50 cursor-not-allowed" : ""}`}
                                     onClick={() => setEditando(true)}
@@ -307,6 +329,15 @@ export default function PerfilUsuario() {
                             </div>
 
                             <p className="texto-azul opacity-70">Usuário desde {dataFormatada}</p>
+                            {!usuario.isVendedor && (
+                                <button
+                                    className="botao-verde mt-4 px-4 py-2 rounded-lg text-white disabled:opacity-60"
+                                    onClick={handleTornarVendedor}
+                                    disabled={criandoContaStripe}
+                                >
+                                    {criandoContaStripe ? "Aguarde..." : "Quero vender meus produtos"}
+                                </button>
+                            )}
                         </>
                     )}
 

@@ -81,7 +81,7 @@ export default function FavoritosSection() {
                     return (
                         <div
                             key={favorito.id}
-                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full"
                         >
                             <Link href={`/produto/${produto.id}`}>
                                 <div className="relative h-48 w-full">
@@ -94,22 +94,22 @@ export default function FavoritosSection() {
                                     />
                                 </div>
                             </Link>
-                            <div className="p-4">
+                            <div className="p-4 flex flex-col gap-3 flex-1">
                                 <Link href={`/produto/${produto.id}`}>
-                                    <h3 className="font-semibold text-lg mb-2 hover:texto-verde transition-colors texto-azul">
+                                    <h3 className="font-semibold text-lg hover:texto-verde transition-colors texto-azul line-clamp-2">
                                         {produto.nome}
                                     </h3>
                                 </Link>
-                                <p className="text-xl font-bold texto-verde mb-4">
+                                <p className="text-xl font-bold texto-verde mb-2">
                                     R$ {Number(produto.preco)?.toFixed(2) || "0.00"}
                                 </p>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 mt-auto">
                                     <button
                                         onClick={() => handleAdicionarAoCarrinho(produto.id)}
-                                        className="flex-1 add-carrinho text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2"
+                                        className="flex-1 add-carrinho text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 text-sm"
                                     >
                                         <IconShoppingCart size={18} />
-                                        <span className="text-sm">Adicionar</span>
+                                        <span>Adicionar</span>
                                     </button>
                                     <button
                                         onClick={() => handleRemoverFavorito(produto.id)}

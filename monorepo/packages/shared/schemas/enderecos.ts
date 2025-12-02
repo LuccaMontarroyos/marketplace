@@ -9,8 +9,8 @@ const estadosBrasileiros = [
 function normalize(text: string) {
   return text
     .trim()
-    .normalize("NFD") // separa acento das letras
-    .replace(/[\u0300-\u036f]/g, "") // remove os acentos
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
 }
 
   export const enderecoSchema = z.object({

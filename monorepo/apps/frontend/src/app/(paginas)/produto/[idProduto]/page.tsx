@@ -34,15 +34,22 @@ export default function Page() {
                 try {
                     const respostaProduto = await buscarProdutoById(Number(idProduto));
                     setProduto(respostaProduto);
-                    const vendedor = await buscarUsuarioPorId(respostaProduto.idVendedor);
-                    setVendedor(vendedor);
+                    try {
+                        const vendedor = await buscarUsuarioPorId(respostaProduto.idVendedor);
+                        setVendedor(vendedor);
+                    } catch (error) {
+                        console.error("Erro ao buscar vendedor (pode não estar logado):", error);
+                    }
                     if (respostaProduto.imagens && respostaProduto.imagens.length > 0) {
                         setImagemPrincipal(respostaProduto.imagens[0].url);
                     } else {
                         setImagemPrincipal(null);
                     }
-                } catch (error) {
+                } catch (error: any) {
                     console.error("Falha ao buscar produto:", error);
+                    if (error?.response?.status === 401 || error?.response?.status === 403) {       
+                        toast.error("Algumas informações podem não estar disponíveis");
+                    }
                 } finally {
                     setCarregando(false);
                 }
@@ -70,16 +77,16 @@ export default function Page() {
 
     if (carregando) {
         return (
-            <div className="bg-gray-200 h-lvh text-black flex justify-center items-center">
-                <p>Carregando produto...</p>
+            <div className="bg-gray-50 min-h-screen text-black flex justify-center items-center">
+                <p className="texto-azul text-lg">Carregando produto...</p>
             </div>
         );
     }
 
     if (!produto) {
         return (
-            <div className="bg-gray-200 h-lvh text-black flex justify-center items-center">
-                <p>Produto não encontrado.</p>
+            <div className="bg-gray-50 min-h-screen text-black flex justify-center items-center">
+                <p className="texto-azul text-lg">Produto não encontrado.</p>
             </div>
         );
     }
@@ -88,6 +95,12 @@ export default function Page() {
 
     const handleAdicionarCarrinho = async (quantidade = 1) => {
         if (!produto) return;
+
+        if (!usuario) {
+            toast.error("Você precisa estar logado para adicionar produtos ao carrinho");
+            return;
+        }
+
         setAdicionando(true);
 
         try {
@@ -240,12 +253,16 @@ export default function Page() {
                             <li>Tipo do produto: {produto.tipo}</li>
                             <li>
                                 Vendido por{" "}
-                                <Link
-                                    href={`/usuarios/${idVendedor}`}
-                                    className="link-perfil hover:underline"
-                                >
-                                    {vendedor?.nome}
-                                </Link>
+                                {vendedor ? (
+                                    <Link
+                                        href={`/usuarios/${idVendedor}`}
+                                        className="link-perfil hover:underline"
+                                    >
+                                        {vendedor.nome}
+                                    </Link>
+                                ) : (
+                                    <span className="texto-azul">Vendedor #{idVendedor}</span>
+                                )}
                             </li>
                         </ul>
                     </div>

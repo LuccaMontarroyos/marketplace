@@ -120,17 +120,6 @@ router.patch("/carrinho", usuarioAutenticadoOpcional, garantirSessionId, async (
       where: whereFiltro
     })
 
-    // const carrinhoExistente = await prisma.carrinho.findFirst({
-    //   where: {
-    //     idProduto,
-    //     OR: [
-    //       { idUsuario: idUsuario || undefined },
-    //       { sessionId: sessionId || undefined }
-    //     ]
-
-    //   }
-    // });
-
     if (!carrinhoExistente) {
       return res.status(404).json({ error: "Item do carrinho não encontrado" });
     }

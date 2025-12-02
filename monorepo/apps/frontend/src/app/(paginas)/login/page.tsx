@@ -28,7 +28,6 @@ export default function Page() {
                 senha: senha,
             }
             const resposta = await loginUsuario(usuarioLogado);
-            console.log("resposta do login: ", resposta);
 
             if (resposta.token) {
                 await setToken(resposta.token);
@@ -37,7 +36,6 @@ export default function Page() {
                 router.push(redirectTo);
             }
             
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             const mensagem = error.response?.data?.message || "Erro ao fazer login. Tente novamente.";
             alert(mensagem);

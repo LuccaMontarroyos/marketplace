@@ -8,11 +8,11 @@ api.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-
+      const token = localStorage.getItem('token');
       const currentPath = window.location.pathname;
 
-      if (currentPath !== '/login') {
+      if (token && currentPath !== '/login' && currentPath !== '/cadastro') {
+        localStorage.removeItem('token');
         window.location.href = '/login';
       }
     }

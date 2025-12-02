@@ -127,7 +127,7 @@ export default function MeusProdutos() {
         const ordemImagensExistentes = produtoEditado.imagens
             .map((img: ImagemProduto, index: number) => {
                 if (!(img instanceof File)) {
-                    return { id: img.id, ordem: index + 1 }; // Ordem iniciando em 1 para bater com backend
+                    return { id: img.id, ordem: index + 1 };
                 }
                 return null;
             })
@@ -183,7 +183,7 @@ export default function MeusProdutos() {
             console.log("[Adicionar imagens] Depois: ", imagensNovas);
             return {
                 ...prev,
-                imagens: imagensNovas, // max 6 imagens
+                imagens: imagensNovas,
             }
         });
     };
@@ -322,7 +322,6 @@ export default function MeusProdutos() {
                                     {produto.imagens.map((img, i) => {
                                         return (
 
-                                            // eslint-disable-next-line @next/next/no-img-element
                                             <img
                                                 key={i}
                                                 src={img.url.startsWith('/') ? `${baseURL}${img.url}` : img.url}

@@ -2,26 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-// import { buscarPedidoPorId } from "@/services/pedidos";
+import { buscarPedidoPorId } from "@/services/pedido";
 import Link from "next/link";
 import { Pedido } from "@/types/Pedido";
 
 export default function PagamentoSucesso() {
   const searchParams = useSearchParams();
   const pedidoId = searchParams.get("pedidoId");
-  const [pedido, setPedido] = useState<Pedido>();
+  const [pedido, setPedido] = useState<Pedido | null>(null);
 
   useEffect(() => {
     if (pedidoId) {
-    //   buscarPedidoPorId(Number(pedidoId))
-        // .then(setPedido)
-        // .catch((err) => console.error("Erro ao buscar pedido:", err));
+      buscarPedidoPorId(Number(pedidoId))
+        .then((pedido: any) => setPedido(pedido))
+        .catch((err: any) => console.error("Erro ao buscar pedido:", err));
     }
   }, [pedidoId]);
 
-  // if (!pedidoId) {
-  //   return <p>Nenhum pedido informado.</p>;
-  // }
+  if (!pedidoId) {
+    return <p>Nenhum pedido informado.</p>;
+  }
 
   return (
     <div className="flex flex-col items-center p-6 bg-white h-screen">

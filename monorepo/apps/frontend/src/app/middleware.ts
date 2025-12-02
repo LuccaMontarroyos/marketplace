@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
 
   if (tentandoAcessarProtegida && !token) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', url.pathname); // para redirecionar depois do login
+    loginUrl.searchParams.set('redirect', url.pathname);
     return NextResponse.redirect(loginUrl);
   }
 

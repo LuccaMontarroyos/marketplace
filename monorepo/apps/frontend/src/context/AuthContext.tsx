@@ -33,10 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const atualizarToken = async (novoToken: string | null) => {
     if (novoToken) {
-      salvarToken(novoToken); // salva corretamente no cookie
+      salvarToken(novoToken);
       setToken(novoToken);
       
-      // Buscar e atualizar dados do usuário
       try {
         const decoded = jwtDecode<JwtPayload>(novoToken);
         const id = decoded.id;
@@ -52,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUsuario(null);
       }
     } else {
-      removerToken(); // remove corretamente do cookie
+      removerToken();
       setToken(null);
       setUsuario(null);
     }

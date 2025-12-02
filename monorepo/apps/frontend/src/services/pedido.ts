@@ -66,6 +66,17 @@ export async function buscarPedidosDoComprador(): Promise<Pedido[]> {
   return response.data;
 }
 
+export async function buscarPedidosAdmin(idComprador?: number): Promise<Pedido[]> {
+  const token = obterToken();
+  const query = idComprador ? `?idComprador=${idComprador}` : "";
+  const response = await api.get<{ pedidos: Pedido[] }>(`/pedidos${query}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data.pedidos;
+}
+
 export async function buscarPedidosDoVendedor(): Promise<Pedido[]> {
   const token = obterToken();
   const response = await api.get<Pedido[]>("/pedidos/vendedor", {

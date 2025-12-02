@@ -98,7 +98,7 @@ export default function PedidosSection() {
           return (
             <div
               key={pedido.id}
-              className="bg-white rounded-lg shadow-md p-4 md:p-6 hover:shadow-lg transition-shadow"
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow flex flex-col gap-4"
             >
               <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
                 <div>

@@ -17,7 +17,7 @@ export default function Home() {
 
     const atualizarCarrinhoLocal = () => {
         setRefreshCarrinho(prev => !prev);
-        setCarrinhoAberto(true);  // alterna entre true/false para forçar refresh
+        setCarrinhoAberto(true);
     };
 
     const handleBuscarProdutos = (nome: string) => {
@@ -27,18 +27,14 @@ export default function Home() {
     const handleFiltrarProdutos = (novosFiltros: FiltrosProduto) => {
         setFiltros((prev) => ({ ...prev, ...novosFiltros }));
     };
-
-    // const abrirCarrinho = () => {
-    //     setCarrinhoAberto(true);
-    // }
-
+    
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 overflow-x-hidden">
             <Cabecalho onToggleFiltros={() => setMostrarFiltros(!mostrarFiltros)} onBuscarProdutos={handleBuscarProdutos} onToggleCarrinho={() => setCarrinhoAberto(!carrinhoAberto)} />
             <div className="w-full">
                 <BannerCarousel />
             </div>
-            <main className="bg-gray-50 min-h-screen flex flex-col md:flex-row gap-4 md:gap-6 p-4">
+            <main className="bg-gray-50 min-h-screen flex flex-col md:flex-row gap-4 md:gap-6 p-4 max-w-full">
                 {mostrarFiltros && (
                     <div className="relative bg-white rounded-lg shadow-md p-4 md:p-6">
                         <FiltroProduto filtrosAtuais={filtros} onFiltrar={handleFiltrarProdutos} />
@@ -51,7 +47,7 @@ export default function Home() {
                         </button>
                     </div>
                 )}
-                <div className="flex-1 w-full">
+                <div className="flex-1 w-full min-w-0">
                     <CardSection onAddCarrinho={atualizarCarrinhoLocal} filtros={filtros} />
                 </div>
             </main>

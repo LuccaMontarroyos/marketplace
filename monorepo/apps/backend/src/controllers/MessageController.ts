@@ -1,5 +1,12 @@
 import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
+import { WebSocketService } from '../services/WebSocketService';
+
+let webSocketServiceInstance: WebSocketService | null = null;
+
+export function setWebSocketService(service: WebSocketService): void {
+  webSocketServiceInstance = service;
+}
 
 export class MessageController extends BaseController {
   async index(req: Request, res: Response): Promise<Response> {
@@ -69,8 +76,16 @@ export class MessageController extends BaseController {
           idUsuarioEmissor: usuario.id,
           idUsuarioReceptor,
           mensagem
+        },
+        include: {
+          usuarioEmissor: { select: { id: true, nome: true, email: true } },
+          usuarioReceptor: { select: { id: true, nome: true, email: true } }
         }
       });
+
+      if (webSocketServiceInstance) {
+        webSocketServiceInstance.emitNewMessage(mensagemEnviada);
+      }
 
       return this.sendSuccess(res, 201, { mensagemEnviada }, 'Mensagem enviada com sucesso!');
 
@@ -103,6 +118,10 @@ export class MessageController extends BaseController {
       await this.prisma.mensagem.delete({
         where: { id }
       });
+
+      if (webSocketServiceInstance) {
+        webSocketServiceInstance.emitMessageDeleted(id, [mensagem.idUsuarioEmissor, mensagem.idUsuarioReceptor]);
+      }
 
       return this.sendSuccess(res, 200, { mensagem }, 'Mensagem excluída com sucesso');
 

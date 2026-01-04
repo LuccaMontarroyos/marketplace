@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { WebSocketProvider } from "@/context/WebSocketContext";
 import { ToastContainer } from "react-toastify";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -48,26 +49,28 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      {/* <AuthGuard> */}
-        {children}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-          toastStyle={{
-            backgroundColor: '#1E1E1E',
-            color: '#ffffff',
-            borderRadius: '10px',
-            fontFamily: 'Montserrat, sans-serif',
-          }}
-        />
-      {/* </AuthGuard> */}
+      <WebSocketProvider>
+        {/* <AuthGuard> */}
+          {children}
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="colored"
+            toastStyle={{
+              backgroundColor: '#1E1E1E',
+              color: '#ffffff',
+              borderRadius: '10px',
+              fontFamily: 'Montserrat, sans-serif',
+            }}
+          />
+        {/* </AuthGuard> */}
+      </WebSocketProvider>
     </AuthProvider>
   );
 }

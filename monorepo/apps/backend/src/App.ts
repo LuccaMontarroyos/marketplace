@@ -1,4 +1,5 @@
 import express, { Express } from 'express';
+import { createServer, Server as HttpServer } from 'http';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
@@ -18,20 +19,25 @@ import messageRoutes from './routes/messageRoutes';
 import adminRoutes from './routes/adminRoutes';
 import stripeRoutes from './routes/stripeRoutes';
 import { uploadDir } from './controllers/ProductController';
+import { WebSocketService } from './services/WebSocketService';
 
 dotenv.config();
 
 export class App {
   private app: Express;
+  private httpServer: HttpServer;
   private port: number;
+  private webSocketService: WebSocketService | null = null;
 
   constructor() {
     this.app = express();
+    this.httpServer = createServer(this.app);
     this.port = 5000;
     this.setupMiddlewares();
     this.setupRoutes();
     this.setupCronJobs();
     this.setupSwagger();
+    this.setupWebSocket();
   }
 
   private setupMiddlewares(): void {
@@ -69,18 +75,26 @@ export class App {
     this.app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   }
 
+  private setupWebSocket(): void {
+    this.webSocketService = new WebSocketService(this.httpServer);
+  }
+
   public start(): void {
     if (!process.env.JWT_SECRET) {
       throw new Error("JWT_SECRET não definida no .env");
     }
 
-    this.app.listen(this.port, () => {
+    this.httpServer.listen(this.port, () => {
       console.log(`Server running on port ${this.port}`);
     });
   }
 
   public getApp(): Express {
     return this.app;
+  }
+
+  public getWebSocketService(): WebSocketService | null {
+    return this.webSocketService;
   }
 }
 

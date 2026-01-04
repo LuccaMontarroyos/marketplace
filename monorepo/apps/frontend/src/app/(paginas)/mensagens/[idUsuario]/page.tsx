@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Send } from "lucide-react";
 import { buscarConversa, enviarMensagem, Mensagem, DadosMensagem } from "@/services/mensagem";
 import { useAuth } from "@/context/AuthContext";
+import { useWebSocket } from "@/context/WebSocketContext";
 import { toast } from "react-toastify";
 
 export default function TelaDeMensagens() {
@@ -12,6 +13,7 @@ export default function TelaDeMensagens() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { usuario } = useAuth();
+  const { socket, isConnected } = useWebSocket();
 
   const idOutroUsuario = Number(params.idUsuario);
   const idUsuarioLogado = usuario?.id;
@@ -37,17 +39,65 @@ export default function TelaDeMensagens() {
         const data = await buscarConversa(idOutroUsuario);
         setMensagens(data);
       } catch (error) {
-        console.error("Erro ao carregar mensagens:", error);
+        // Error handled silently
       } finally {
         setCarregando(false);
       }
     };
 
     carregarMensagens();
-
-    const interval = setInterval(carregarMensagens, 5000);
-    return () => clearInterval(interval);
   }, [idOutroUsuario, usuario, router]);
+
+  useEffect(() => {
+    if (!socket || !isConnected || !idOutroUsuario) return;
+
+    socket.emit('join_conversation', { otherUserId: idOutroUsuario });
+
+    const handleNewMessage = (message: Mensagem) => {
+      setMensagens((prev) => {
+        const exists = prev.some((msg) => msg.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
+    };
+
+    const handleMessageSent = (message: Mensagem) => {
+      setMensagens((prev) => {
+        const tempIndex = prev.findIndex((msg) => msg.id === Math.floor(message.id));
+        if (tempIndex !== -1 && prev[tempIndex].id < 0) {
+          const newMessages = [...prev];
+          newMessages[tempIndex] = message;
+          return newMessages;
+        }
+        return prev;
+      });
+    };
+
+    const handleMessageReceived = (message: Mensagem) => {
+      setMensagens((prev) => {
+        const exists = prev.some((msg) => msg.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
+    };
+
+    const handleMessageDeleted = (data: { messageId: number }) => {
+      setMensagens((prev) => prev.filter((msg) => msg.id !== data.messageId));
+    };
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('message_sent', handleMessageSent);
+    socket.on('message_received', handleMessageReceived);
+    socket.on('message_deleted', handleMessageDeleted);
+
+    return () => {
+      socket.emit('leave_conversation', { otherUserId: idOutroUsuario });
+      socket.off('new_message', handleNewMessage);
+      socket.off('message_sent', handleMessageSent);
+      socket.off('message_received', handleMessageReceived);
+      socket.off('message_deleted', handleMessageDeleted);
+    };
+  }, [socket, isConnected, idOutroUsuario]);
 
   const rolarParaBaixo = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,24 +115,23 @@ export default function TelaDeMensagens() {
       mensagem: novaMensagem,
     };
 
+    const msgTemporaria: Mensagem = {
+      id: -Math.random(),
+      idUsuarioEmissor: idUsuarioLogado,
+      idUsuarioReceptor: idOutroUsuario,
+      mensagem: novaMensagem,
+      dataEnvio: new Date(),
+    };
+
     try {
       setEnviando(true);
-      const msgTemporaria: Mensagem = {
-        id: Math.random(),
-        idUsuarioEmissor: idUsuarioLogado,
-        idUsuarioReceptor: idOutroUsuario,
-        mensagem: novaMensagem,
-        dataEnvio: new Date(),
-      };
-      
       setMensagens((prev) => [...prev, msgTemporaria]);
       setNovaMensagem(""); 
 
       await enviarMensagem(dados);
     } catch (error) {
-      console.error("Erro ao enviar mensagem:", error);
       toast.error("Não foi possível enviar sua mensagem.");
-      setMensagens((prev) => prev.slice(0, -1));
+      setMensagens((prev) => prev.filter((msg) => msg.id !== msgTemporaria.id));
     } finally {
       setEnviando(false);
     }
@@ -90,7 +139,6 @@ export default function TelaDeMensagens() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100">
-
       <header className="bg-white px-4 md:px-8 py-4 flex gap-3 items-center shadow-md z-10 sticky top-0">
         <Image
           src={fotoDestinatario}
@@ -99,7 +147,12 @@ export default function TelaDeMensagens() {
           height={48}
           className="object-cover w-12 h-12 rounded-full"
         />
-        <p className="font-semibold text-lg texto-azul">{nomeDestinatario}</p>
+        <div className="flex-1">
+          <p className="font-semibold text-lg texto-azul">{nomeDestinatario}</p>
+          <p className="text-xs texto-azul opacity-60">
+            {isConnected ? '● Online' : '○ Offline'}
+          </p>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 md:px-16 py-6 space-y-4">
@@ -142,10 +195,11 @@ export default function TelaDeMensagens() {
                 handleEnviarMensagem();
               }
             }}
+            disabled={!isConnected}
           />
           <button
             onClick={handleEnviarMensagem}
-            disabled={enviando || !novaMensagem.trim()}
+            disabled={enviando || !novaMensagem.trim() || !isConnected}
             className="bg-verde text-white rounded-full p-3 hover:bg-azul transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send size={22} />

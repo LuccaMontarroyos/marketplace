@@ -29,7 +29,6 @@ export default function DetalhesPedidoPage() {
       setPedido(dados);
     } catch (error: any) {
       toast.error("Erro ao carregar pedido");
-      console.error(error);
       router.push("/pedidos");
     } finally {
       setLoading(false);
@@ -47,7 +46,6 @@ export default function DetalhesPedidoPage() {
       router.push("/pedidos");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Erro ao cancelar pedido");
-      console.error(error);
     }
   };
 
@@ -58,7 +56,6 @@ export default function DetalhesPedidoPage() {
       router.push("/");
     } catch (error: any) {
       toast.error("Erro ao refazer pedido");
-      console.error(error);
     }
   };
 

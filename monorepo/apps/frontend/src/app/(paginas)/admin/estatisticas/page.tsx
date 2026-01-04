@@ -52,7 +52,6 @@ export default function AdminEstatisticasPage() {
       });
     } catch (error: any) {
       toast.error("Erro ao carregar estatísticas");
-      console.error(error);
       setEstatisticas((prev) => ({ ...prev, loading: false }));
     }
   };

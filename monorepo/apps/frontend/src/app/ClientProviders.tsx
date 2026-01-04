@@ -2,6 +2,7 @@
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { WebSocketProvider } from "@/context/WebSocketContext";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ToastContainer } from "react-toastify";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -47,10 +48,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
   return (
-    <AuthProvider>
-      <WebSocketProvider>
-        {/* <AuthGuard> */}
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+        <WebSocketProvider>
           {children}
           <ToastContainer
             position="top-right"
@@ -69,8 +72,8 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
               fontFamily: 'Montserrat, sans-serif',
             }}
           />
-        {/* </AuthGuard> */}
-      </WebSocketProvider>
-    </AuthProvider>
+        </WebSocketProvider>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }

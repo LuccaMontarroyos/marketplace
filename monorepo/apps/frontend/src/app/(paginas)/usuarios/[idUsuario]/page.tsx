@@ -22,9 +22,7 @@ export default function Page() {
                 const dados = await buscarUsuarioPorId(Number(idUsuario));
                 setUsuario(dados);
             } catch (error) {
-                console.error("Erro ao buscar usuário:", error);
             } finally {
-                console.log("caindo aqui")
                 setCarregando(false);
             }
         };

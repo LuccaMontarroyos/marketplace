@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { OAuth2Client } from 'google-auth-library';
 import { BaseController } from './BaseController';
 import { PrismaClient } from '@prisma/client';
 
@@ -30,9 +31,9 @@ export class UserController extends BaseController {
         where: {
           OR: [
             { email },
-            { cpf },
-            { celular }
-          ]
+            { cpf: cpf !== '00000000000' ? cpf : undefined },
+            { celular: celular !== '00000000000' ? celular : undefined }
+          ].filter(Boolean)
         }
       });
 
@@ -143,7 +144,12 @@ export class UserController extends BaseController {
         return this.sendError(res, 400, 'ID inválido');
       }
 
-      const resultado = usuarioSchema.partial().safeParse(req.body);
+      const updateSchema = usuarioSchema.partial().extend({
+        cpf: z.string().regex(/^\d{11}$/).optional(),
+        celular: z.string().regex(/^\d{11}$/).optional(),
+      });
+
+      const resultado = updateSchema.safeParse(req.body);
       if (!resultado.success) {
         return this.sendError(res, 400, 'Dados inválidos', resultado.error.errors);
       }
@@ -161,6 +167,30 @@ export class UserController extends BaseController {
 
       if (usuario.id !== usuarioLogado.id) {
         return this.sendError(res, 403, 'Você não pode acessar dados de outro usuário');
+      }
+
+      if (data.cpf && data.cpf !== usuario.cpf) {
+        const cpfExistente = await this.prisma.usuario.findFirst({
+          where: { 
+            cpf: data.cpf,
+            id: { not: usuario.id }
+          }
+        });
+        if (cpfExistente && data.cpf !== '00000000000' && !data.cpf.startsWith('000000')) {
+          return this.sendError(res, 409, 'CPF já cadastrado');
+        }
+      }
+
+      if (data.celular && data.celular !== usuario.celular) {
+        const celularExistente = await this.prisma.usuario.findFirst({
+          where: { 
+            celular: data.celular,
+            id: { not: usuario.id }
+          }
+        });
+        if (celularExistente && data.celular !== '00000000000' && !data.celular.startsWith('000000')) {
+          return this.sendError(res, 409, 'Celular já cadastrado');
+        }
       }
 
       const dataUpdate = {
@@ -269,6 +299,80 @@ export class UserController extends BaseController {
 
     } catch (error) {
       return this.sendError(res, 500, 'Erro ao buscar produtos', error);
+    }
+  }
+
+  async loginGoogle(req: Request, res: Response): Promise<Response> {
+    try {
+      const { tokenId, credential } = req.body;
+      const idToken = tokenId || credential;
+
+      if (!idToken) {
+        return this.sendError(res, 400, 'Token do Google não fornecido');
+      }
+
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        return this.sendError(res, 500, 'Configuração do Google OAuth não encontrada');
+      }
+
+      const client = new OAuth2Client(clientId);
+
+      const ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: clientId,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload) {
+        return this.sendError(res, 400, 'Token do Google inválido');
+      }
+
+      const { email, name, picture, sub: googleId } = payload;
+
+      if (!email) {
+        return this.sendError(res, 400, 'Email não encontrado no token do Google');
+      }
+
+      let usuario = await this.prisma.usuario.findUnique({
+        where: { email }
+      });
+
+      if (!usuario) {
+        const senhaAleatoria = await bcrypt.hash(Math.random().toString(36), 10);
+        const cpfUnico = `000000${Date.now().toString().slice(-5)}`;
+        const celularUnico = `000000${Date.now().toString().slice(-5)}`;
+        
+        usuario = await this.prisma.usuario.create({
+          data: {
+            nome: name || 'Usuário Google',
+            email,
+            senha: senhaAleatoria,
+            cpf: cpfUnico,
+            celular: celularUnico,
+            fotoPerfil: picture || null,
+          }
+        });
+      } else if (picture && !usuario.fotoPerfil) {
+        usuario = await this.prisma.usuario.update({
+          where: { id: usuario.id },
+          data: { fotoPerfil: picture }
+        });
+      }
+
+      const EXPIRES_IN = process.env.JWT_EXPIRES_IN as string || '7d';
+
+      const token = jwt.sign(
+        { id: usuario.id, email: usuario.email, isAdmin: usuario.isAdmin },
+        SECRET_KEY,
+        { expiresIn: EXPIRES_IN } as jwt.SignOptions
+      );
+
+      const { senha: _, ...usuarioSemSenha } = usuario;
+      return this.sendSuccess(res, 200, { usuario: usuarioSemSenha, token }, 'Login realizado com sucesso!');
+
+    } catch (error) {
+      return this.sendError(res, 500, 'Erro ao fazer login com Google', error);
     }
   }
 }

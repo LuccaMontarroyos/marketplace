@@ -130,9 +130,6 @@ export default function MeusProdutos() {
 
         formData.append("imagensOrdem", JSON.stringify(ordemImagensExistentes));
 
-
-
-
         produtoEditado.imagens.forEach((imagem: ImagemProduto) => {
             if (imagem instanceof File) {
                 formData.append("imagens", imagem);
@@ -147,7 +144,6 @@ export default function MeusProdutos() {
             setEditandoIndex(null);
             setErrosValidacao({});
         } catch (error) {
-            // Error handled silently
         }
     };
 

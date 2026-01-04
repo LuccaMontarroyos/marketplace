@@ -24,7 +24,6 @@ export default function FavoritosPage() {
             setFavoritos(dados);
         } catch (error: any) {
             toast.error("Erro ao carregar favoritos");
-            console.error(error);
         } finally {
             setLoading(false);
         }
@@ -37,7 +36,6 @@ export default function FavoritosPage() {
             setFavoritos(favoritos.filter((f) => f.idProduto !== idProduto));
         } catch (error: any) {
             toast.error("Erro ao remover favorito");
-            console.error(error);
         }
     };
 
@@ -48,7 +46,6 @@ export default function FavoritosPage() {
             router.push("/");
         } catch (error: any) {
             toast.error("Erro ao adicionar ao carrinho");
-            console.error(error);
         }
     };
 

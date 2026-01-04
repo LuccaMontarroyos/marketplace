@@ -56,7 +56,6 @@ export default function AvaliacoesProduto({ idProduto }: AvaliacoesProdutoProps)
       carregarAvaliacoes();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Erro ao criar avaliação");
-      console.error(error);
     }
   };
 
@@ -71,7 +70,6 @@ export default function AvaliacoesProduto({ idProduto }: AvaliacoesProdutoProps)
       carregarAvaliacoes();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Erro ao excluir avaliação");
-      console.error(error);
     }
   };
 

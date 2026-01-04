@@ -22,7 +22,6 @@ export default function PedidosSection() {
       setPedidos(dados);
     } catch (error: any) {
       toast.error("Erro ao carregar pedidos");
-      console.error(error);
     } finally {
       setLoading(false);
     }

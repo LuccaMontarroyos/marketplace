@@ -35,7 +35,6 @@ export default function AdminUsuariosPage() {
       setUsuarios(dados);
     } catch (error: any) {
       toast.error("Erro ao carregar usuários");
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -52,7 +51,6 @@ export default function AdminUsuariosPage() {
       carregarUsuarios();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Erro ao excluir usuário");
-      console.error(error);
     }
   };
 

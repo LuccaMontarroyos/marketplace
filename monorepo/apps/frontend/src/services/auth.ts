@@ -31,3 +31,12 @@ export const loginUsuario = async (dados: LoginPayload) => {
   });
   return response.data;
 };
+
+export const loginGoogle = async (credential: string) => {
+  const response = await api.post('/usuarios/login/google', { credential }, {
+    headers: {
+        'Content-Type': 'application/json',
+    }
+  });
+  return response.data;
+};

@@ -39,7 +39,6 @@ export default function TelaDeMensagens() {
         const data = await buscarConversa(idOutroUsuario);
         setMensagens(data);
       } catch (error) {
-        // Error handled silently
       } finally {
         setCarregando(false);
       }

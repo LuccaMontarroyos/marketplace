@@ -22,7 +22,6 @@ export default function PedidosVendedorPage() {
       setPedidos(dados);
     } catch (error: any) {
       toast.error("Erro ao carregar pedidos");
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -35,7 +34,6 @@ export default function PedidosVendedorPage() {
       carregarPedidos();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Erro ao atualizar status");
-      console.error(error);
     }
   };
 

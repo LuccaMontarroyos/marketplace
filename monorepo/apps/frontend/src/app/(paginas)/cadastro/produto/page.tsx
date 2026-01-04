@@ -76,8 +76,6 @@
                 toast.success("Produto criado com sucesso!");
                 router.push("/");
             } catch (error: any) {
-                console.error("Erro ao cadastrar:", error);
-                
                 if (error.response?.status === 403 && error.response?.data?.erro === "Usuário não tem conta Stripe para vender.") {
                     const criarConta = window.confirm(
                         "Você precisa criar uma conta no Stripe para vender produtos. Deseja criar agora?"
@@ -87,7 +85,6 @@
                         try {
                             await criarContaStripe().catch((err) => {
                                 if (err.response?.data?.erro === "Usuário já possui conta no Stripe.") {
-                                    console.log("Conta Stripe já existe, seguimos...");
                                 } else {
                                     throw err;
                                 }
@@ -96,7 +93,6 @@
                             const linkData = await gerarLinkOnBoarding();
                             window.location.href = linkData.url;
                         } catch (stripeError) {
-                            console.error("Erro ao criar conta Stripe:", stripeError);
                             toast.error("Erro ao criar conta Stripe. Tente novamente.");
                         }
                     }

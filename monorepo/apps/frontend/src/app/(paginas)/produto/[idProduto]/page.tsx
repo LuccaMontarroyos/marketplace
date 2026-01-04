@@ -38,7 +38,6 @@ export default function Page() {
                         const vendedor = await buscarUsuarioPorId(respostaProduto.idVendedor);
                         setVendedor(vendedor);
                     } catch (error) {
-                        console.error("Erro ao buscar vendedor (pode não estar logado):", error);
                     }
                     if (respostaProduto.imagens && respostaProduto.imagens.length > 0) {
                         setImagemPrincipal(respostaProduto.imagens[0].url);
@@ -46,7 +45,6 @@ export default function Page() {
                         setImagemPrincipal(null);
                     }
                 } catch (error: any) {
-                    console.error("Falha ao buscar produto:", error);
                     if (error?.response?.status === 401 || error?.response?.status === 403) {       
                         toast.error("Algumas informações podem não estar disponíveis");
                     }
@@ -68,7 +66,6 @@ export default function Page() {
                     );
                     setEhFavorito(favoritoEncontrado);
                 } catch (error) {
-                    console.error("Erro ao verificar favorito:", error);
                 }
             }
         };
@@ -112,7 +109,6 @@ export default function Page() {
                 error?.response?.data?.error ||
                 "Erro ao adicionar produto ao carrinho.";
             toast.error(mensagem);
-            console.error("Erro ao adicionar ao carrinho:", error);
         } finally {
             setAdicionando(false);
         }
@@ -138,7 +134,6 @@ export default function Page() {
             }
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Erro ao atualizar favorito");
-            console.error("Erro ao atualizar favorito:", error);
         }
     };
 

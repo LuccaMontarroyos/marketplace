@@ -84,9 +84,7 @@ export class App {
       throw new Error("JWT_SECRET não definida no .env");
     }
 
-    this.httpServer.listen(this.port, () => {
-      console.log(`Server running on port ${this.port}`);
-    });
+    this.httpServer.listen(this.port);
   }
 
   public getApp(): Express {

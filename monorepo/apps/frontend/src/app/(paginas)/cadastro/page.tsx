@@ -63,9 +63,7 @@ export default function FormularioDeCadastro() {
         }
     }, [stream]);
 
-
     const onSubmit = async (data: FormInputs) => {
-
         let fotoPerfil = undefined;
 
         if (data.imagem?.[0]) {
@@ -100,8 +98,6 @@ export default function FormularioDeCadastro() {
         } catch (error) {
             alert("Erro ao cadastrar usuário. Tente novamente.");
         }
-
-
     };
 
     const ligarCamera = async () => {
@@ -111,7 +107,6 @@ export default function FormularioDeCadastro() {
             setCameraAtiva(true);
         } catch (error) {
             alert("Erro ao acessar a câmera. Verifique as permissões.");
-            console.error(error);
         }
     };
 
@@ -289,7 +284,7 @@ export default function FormularioDeCadastro() {
                 )}
 
 
-                <canvas ref={canvasRef} className="hidden text-" />
+                <canvas ref={canvasRef} className="hidden" />
 
                 {preview && (
                     <div className="flex flex-col items-center gap-5">
@@ -301,7 +296,7 @@ export default function FormularioDeCadastro() {
                     </div>
                 )}
 
-                <button onSubmit={() => onSubmit} type="submit" className="botao-azul text-white py-2 rounded">
+                <button type="submit" className="botao-azul text-white py-2 rounded">
                     Cadastrar
                 </button>
             </form>

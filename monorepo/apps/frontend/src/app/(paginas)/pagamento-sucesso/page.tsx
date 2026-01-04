@@ -15,7 +15,7 @@ export default function PagamentoSucesso() {
     if (pedidoId) {
       buscarPedidoPorId(Number(pedidoId))
         .then((pedido: any) => setPedido(pedido))
-        .catch((err: any) => console.error("Erro ao buscar pedido:", err));
+        .catch(() => {});
     }
   }, [pedidoId]);
 

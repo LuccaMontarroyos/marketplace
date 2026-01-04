@@ -24,7 +24,6 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
       const produtosEncontrados = await buscarProdutosDoCarrinho();
       setItens(produtosEncontrados);
     } catch (error) {
-      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -35,7 +34,6 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
       await removerProdutoDoCarrinho(idProduto);
       setItens((prev) => prev.filter(item => item.idProduto !== idProduto));
     } catch (error) {
-      // Error handled silently
     }
   }
 
@@ -45,7 +43,6 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
       const atualizado = await atualizarCarrinho(idProduto, novaQuantidade);
       setItens((prev) => prev.map(item => item.idProduto === idProduto ? { ...item, quantidade: atualizado.quantidade } : item));
     } catch (error) {
-      // Error handled silently
     }
   };
 
@@ -68,14 +65,12 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
       className={`fixed top-0 right-0 h-full w-80 text-black bg-white shadow-lg z-50 transition-transform duration-300 ${aberto ? "translate-x-0" : "translate-x-full"
         }`}
     >
-      {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold texto-azul">Seu Carrinho</h2>
         <button onClick={onFechar} className="texto-azul hover:texto-verde text-xl font-bold">×</button>
       </div>
 
-      {/* Corpo com scroll */}
-      <div className="flex flex-col h-[calc(100%-64px)]"> {/* 64px = altura do header */}
+      <div className="flex flex-col h-[calc(100%-64px)]">
         <div className="flex-1 overflow-y-auto p-4">
           {loading && <p className="texto-azul">Carregando itens...</p>}
           {!loading && itens.length === 0 && <p className="texto-azul text-center py-8">Seu carrinho está vazio</p>}
@@ -129,7 +124,6 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
           </section>
         </div>
 
-        {/* Rodapé fixo */}
         <div className="p-4 border-t border-gray-200 bg-white">
           <div className="flex justify-between mb-4 px-2">
             <p className="texto-azul font-semibold">TOTAL</p>

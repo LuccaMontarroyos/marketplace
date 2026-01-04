@@ -56,7 +56,6 @@ export default function Page() {
       toast.success("Redirecionando para o pagamento...");
       window.location.href = pedido.checkoutUrl;
     } catch (err: any) {
-      console.error(err);
       toast.error(err.response?.data?.message || "Erro ao criar pedido");
     } finally {
       setLoading(false);
@@ -84,7 +83,6 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Endereço */}
         <div className="bg-gray-50 p-4 md:p-6 rounded-2xl shadow">
           <h2 className="text-lg font-semibold mb-4 texto-azul">Endereço de Entrega</h2>
           {enderecos.length > 0 ? (
@@ -106,11 +104,10 @@ export default function Page() {
           )}
         </div>
 
-        {/* Pagamento */}
         <div className="bg-gray-50 p-4 md:p-6 rounded-2xl shadow">
           <h2 className="text-lg font-semibold mb-4 texto-azul">Forma de Pagamento</h2>
           <div className="flex flex-wrap gap-4">
-            {[/*"pix",*/ "boleto", "cartao"].map((opcao) => (
+            {["boleto", "cartao"].map((opcao) => (
               <label key={opcao} className="flex items-center gap-2 cursor-pointer texto-azul">
                 <input
                   type="radio"
@@ -133,7 +130,6 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Confirmar */}
         <button
           onClick={handleConfirmarPedido}
           disabled={loading}

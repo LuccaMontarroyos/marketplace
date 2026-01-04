@@ -23,7 +23,6 @@ export default function CardSection({ filtros, onAddCarrinho, idUsuario }: CardS
             }
             setProdutos(produtosEncontrados);
         } catch (error) {
-            console.error("Erro ao buscar produtos:", error);
         }
     };
 

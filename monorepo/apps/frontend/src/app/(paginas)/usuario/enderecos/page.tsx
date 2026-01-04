@@ -73,7 +73,6 @@ export default function Page() {
       setEditandoIndex(null);
       setErrors({});
     } catch (error) {
-      console.error("Erro ao salvar endereço:", error);
       toast.error("Erro ao salvar endereço");
     }
 
@@ -85,7 +84,6 @@ export default function Page() {
       try {
         await excluirEndereco(endereco.id);
       } catch (error) {
-        console.error("Erro ao excluir endereço", error);
         toast.error("Erro ao excluir endereço");
         return;
       }

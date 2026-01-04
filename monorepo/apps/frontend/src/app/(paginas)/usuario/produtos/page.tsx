@@ -63,7 +63,6 @@ export default function MeusProdutos() {
     const buscarProdutos = async (): Promise<Produto[]> => {
         const produtosEncontrados = await buscarProdutosDoUsuario();
         setProdutos(produtosEncontrados);
-        console.log(produtosEncontrados);
         return produtosEncontrados;
     }
 
@@ -87,7 +86,6 @@ export default function MeusProdutos() {
         setEditandoIndex(index);
         setImagensRemovidas([]);
         if (produtos) {
-            console.log("O array de produtos[index].imagens: ", produtos[index].imagens);
             setProdutoEditado({ ...produtos[index], imagens: [...produtos[index].imagens] });
         }
     };
@@ -104,13 +102,10 @@ export default function MeusProdutos() {
 
     const handleSalvar = async (index: number) => {
 
-        console.log("[Salvar] Imagens atuais: ", produtoEditado.imagens);
-
         const parsed = produtoSchema.safeParse(produtoEditado);
 
         if (!parsed.success) {
             const erros = parsed.error.flatten().fieldErrors;
-            console.log("Erros de validação:", erros);
             setErrosValidacao(erros);
             return;
         }
@@ -146,14 +141,13 @@ export default function MeusProdutos() {
 
         try {
             const produtoSalvo = await atualizarProduto(formData, produtoEditado.id);
-            console.log("[Salvar] Produto salvo (resposta backend):", produtoSalvo.produto);
             const novos = [...produtos!];
             novos[index] = produtoSalvo.produto;
             setProdutos(novos);
             setEditandoIndex(null);
             setErrosValidacao({});
         } catch (error) {
-            console.error("Erro ao atualizar produto", error);
+            // Error handled silently
         }
     };
 
@@ -178,9 +172,7 @@ export default function MeusProdutos() {
         const novas = Array.from(files);
         setProdutoEditado((prev: any) => {
             const imagensAntes = prev.imagens || [];
-            console.log("[Adicionar imagens] Antes: ", imagensAntes);
             const imagensNovas = [...imagensAntes, ...novas].slice(0, 6);
-            console.log("[Adicionar imagens] Depois: ", imagensNovas);
             return {
                 ...prev,
                 imagens: imagensNovas,

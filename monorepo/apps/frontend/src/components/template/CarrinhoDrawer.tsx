@@ -16,8 +16,6 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
 
   const [itens, setItens] = useState<ItemCarrinho[]>([]);
   const [loading, setLoading] = useState(false);
-
-  console.log(itens);
   const router = useRouter();
   
   const buscarProdutos = async () => {
@@ -26,7 +24,7 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
       const produtosEncontrados = await buscarProdutosDoCarrinho();
       setItens(produtosEncontrados);
     } catch (error) {
-      console.error("Erro ao buscar produtos do carrinho", error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -34,11 +32,10 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
 
   const handleRemover = async (idProduto: number) => {
     try {
-      console.log("Esse é o id do produto: ", idProduto);
       await removerProdutoDoCarrinho(idProduto);
       setItens((prev) => prev.filter(item => item.idProduto !== idProduto));
     } catch (error) {
-      console.error("Erro ao remover item do carrinho: ", error);
+      // Error handled silently
     }
   }
 
@@ -48,7 +45,7 @@ export default function CarrinhoDrawer({ aberto, onFechar, refresh }: CarrinhoDr
       const atualizado = await atualizarCarrinho(idProduto, novaQuantidade);
       setItens((prev) => prev.map(item => item.idProduto === idProduto ? { ...item, quantidade: atualizado.quantidade } : item));
     } catch (error) {
-      console.error("Erro ao atualizar carrinho: ", error);
+      // Error handled silently
     }
   };
 

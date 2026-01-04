@@ -19,7 +19,6 @@ export default function Page() {
   const buscarEnderecos = async (): Promise<Endereco[]> => {
     const enderecosEncontrados = await buscarEnderecosDoUsuario();
     setEnderecos(enderecosEncontrados);
-    console.log(enderecosEncontrados);
     return enderecosEncontrados;
   }
 

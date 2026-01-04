@@ -15,17 +15,12 @@ export interface CardProps {
 }
 
 export default function Card({ nome, idProduto, imagem, descricao, preco, onAddCarrinho }: CardProps) {
-  console.log(imagem);
   const handleAddShoppingCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-
-    
     try {
-      console.log("a porra ta caindo aqui");
       await adicionarAoCarrinho(idProduto, 1);
       if(onAddCarrinho) onAddCarrinho();
     } catch (error) {
-      console.error("Erro ao atualizar carrinho: ", error);
       toast.error("Erro ao atualizar carrinho");
     }
   } 

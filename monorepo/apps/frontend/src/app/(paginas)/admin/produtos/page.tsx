@@ -36,7 +36,6 @@ export default function AdminProdutosPage() {
       setProdutos(dados);
     } catch (error: any) {
       toast.error("Erro ao carregar produtos");
-      console.error(error);
     } finally {
       setLoading(false);
     }

@@ -47,7 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUsuario(null);
         }
       } catch (error) {
-        console.log(`Erro ao buscar usuário pelo id: ${error}`);
         setUsuario(null);
       }
     } else {
@@ -78,7 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logout();
           }
         } catch (error) {
-          console.log(`Erro ao buscar usuário pelo id: ${error}`)
           logout();
         }
       } else {

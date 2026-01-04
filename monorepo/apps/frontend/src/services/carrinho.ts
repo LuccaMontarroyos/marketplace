@@ -8,7 +8,6 @@ export async function buscarProdutosDoCarrinho(): Promise<ItemCarrinho[]> {
         });
         return data;
     } catch (error) {
-        console.error("Erro ao buscar itens do carrinho:", error);
         return [];
     }
 };
@@ -22,7 +21,6 @@ export async function adicionarAoCarrinho(idProduto: number, quantidade: number)
         })
         return data;
     } catch (error) {
-        console.error("Erro ao adicionar produto ao carrinho: ", error);
         throw error;
     }
 }
@@ -34,7 +32,6 @@ export async function atualizarCarrinho(idProduto: number, quantidade: number) {
         }, { withCredentials: true });
         return data;
     } catch (error) {
-        console.error("Erro ao atualizar carrinho: ", error);
         throw error;
     }
 }
@@ -46,7 +43,6 @@ export async function removerProdutoDoCarrinho(idProduto: number) {
         });
         return data;
     } catch (error) {
-        console.error("Erro ao remover produto do carrinho: ", error);
         throw error;
     }
 }  

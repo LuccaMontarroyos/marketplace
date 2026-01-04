@@ -14,13 +14,11 @@ export default function NavBar({ onToggleCarrinho }: { onToggleCarrinho: () => v
 
     const irParaCadastro = () => {
         const currentPath = window.location.pathname + window.location.search;
-        console.log(currentPath);
         router.push(`/cadastro?from=${encodeURIComponent(currentPath)}`);
     };
 
     const irParaLogin = () => {
         const currentPath = window.location.pathname + window.location.search;
-        console.log(currentPath);
         router.push(`/login?from=${encodeURIComponent(currentPath)}`);
     }
 

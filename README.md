@@ -435,29 +435,5 @@ npm test
 - `npm start` - Inicia servidor de produção
 - `npm run lint` - Executa linter
 
-## 🤝 Contribuindo
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📄 Licença
-
-Este projeto está sob a licença ISC.
-
-## 👥 Autores
-
-- **Desenvolvedor** - *Desenvolvimento inicial* - [SeuNome](https://github.com/seuusuario)
-
-## 🙏 Agradecimentos
-
-- Comunidade Next.js
-- Equipe do Prisma
-- Documentação do Stripe
-- Todos os mantenedores das bibliotecas open source utilizadas
-
 ---
 
-**Desenvolvido com ❤️ usando as melhores tecnologias do mercado**
